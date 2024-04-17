@@ -3,20 +3,20 @@
 
 #include "../lib/hw.h"
 
-struct FreeBlock{
-    FreeBlock* left;
-    FreeBlock* right;
+struct MemSegment{
+    MemSegment* left;
+    MemSegment* right;
     size_t size;
 };
 
 class MemoryAllocator{
 private:
-    static FreeBlock* segmentsHead;
-    static uint64 segmentsNumber;
+    static MemSegment* segmentsHead;
+    static uint32 segmentsNumber;
 public:
     static void initialize();
     static void* mem_allocate(uint64 size);
-    static int mem_free();
+    static int mem_free(void* ptr);
 };
 
 #endif
