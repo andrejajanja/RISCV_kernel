@@ -9,8 +9,12 @@ int main(){
     //initialize system data structures and register values
     initializeSystemRegisters();
 
+    //start user main
     int* ptr1 = (int*)mem_alloc(10);
     ptr1++;
+
+    mem_free(ptr1);
+    //end user main
 
     stopEmulator();
     return 0;
