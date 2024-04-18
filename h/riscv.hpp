@@ -29,6 +29,12 @@ inline uint64 readA0(){
     return value;
 }
 
+inline uint64 readA1(){
+    uint64 value;
+    asm("mv %0, a1;": "=r"(value));
+    return value;
+}
+
 inline uint64 readSepc(){
     uint64 value;
     asm("csrr %0, sepc;": "=r"(value));
@@ -48,6 +54,10 @@ inline void writeStvec(uint64 value){
 
 inline void writeA0(uint64 value){
     asm("mv a0, %0;": : "r"(value));
+}
+
+inline void writeA1(uint64 value){
+    asm("mv a1, %0;": : "r"(value));
 }
 
 inline void writeSepc(uint64 value){
@@ -70,7 +80,34 @@ inline void printString(const char* str){
         __putc(*str);
         str++;
     }
-    __putc('\n');
+    return;
+}
+
+inline void printInt(int number){
+    if(number==0){
+        __putc('0');
+        __putc('\n');
+        return;
+    }
+
+    if(number < 0){
+        __putc('-');
+    }
+
+    while(number > 0){
+        int digit = number%10;
+        __putc((char)(48+digit));
+        number/=10;
+    }
+    return;
+}
+
+inline void printUint(uint64 number){
+    while(number > 0){
+        int digit = number%10;
+        __putc((char)(48+digit));
+        number/=10;
+    }
     return;
 }
 

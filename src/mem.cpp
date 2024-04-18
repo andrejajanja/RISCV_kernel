@@ -3,24 +3,28 @@
 //
 
 #include "../h/mem.hpp"
+#include "../h/riscv.hpp"
 
-void MemoryAllocator::initialize() {
-    segmentsHead = (MemSegment*)(HEAP_START_ADDR);
+MemSegment* MemoryAllocator::segmentsHead = nullptr;
+uint32 MemoryAllocator::totalSize = 0;
+uint32 MemoryAllocator::segmentsNumber = 1;
+
+void MemoryAllocator::initialize(){
+    MemoryAllocator::segmentsHead = (MemSegment*)(HEAP_START_ADDR);
     segmentsHead->left = nullptr;
     segmentsHead->right = nullptr;
     //size of every block is in number of memory blocks, not bytes
     segmentsHead->size = size_t(uint64(HEAP_END_ADDR) - uint64(HEAP_START_ADDR))/MEM_BLOCK_SIZE;
-    biggestSize = segmentsHead->size;
-    segmentsNumber = 1;
+    totalSize = MemoryAllocator::segmentsHead->size;
 }
 
 void* MemoryAllocator::mem_allocate(size_t size) {
     //doing some checks if it should even try to allocate space
-    if(segmentsNumber == 0) return nullptr;
+    if(segmentsNumber == 0 || size > totalSize) return nullptr;
 
-    //first fit algorithm -- TODO upgrade this to some exotic algorithm with binary tree
+    //first fit algorithm -- TODO in the future, upgrade this to some exotic algorithm with binary tree
     MemSegment* temp = segmentsHead;
-    while(temp){ // TODO check for bugs in this implementation
+    while(temp){ // TODO TEST: check for bugs in this implementation
 
         if(size == temp->size){
             if(temp->left) temp->left->right = temp->right;
@@ -54,6 +58,31 @@ void* MemoryAllocator::mem_allocate(size_t size) {
 }
 
 int MemoryAllocator::mem_free(void* ptr) {
+    size_t offset = *((size_t*)ptr-sizeof(size_t)) * MEM_BLOCK_SIZE;
+    MemSegment* pointer = (MemSegment*)ptr-sizeof(size_t);
 
+    printUint(offset);
 
+    //TODO MEM_FREE: WRITE THIS ON PAPER SO YOU GET ALL THE EDGE CASES RIGHT!!!
+    MemSegment* temp = segmentsHead;
+    while(temp){
+        //detect between which segments is this segment to be fred up
+        if(temp->right){
+            if(temp < pointer && pointer < temp->right){
+
+            }else{
+                temp = temp->right;
+                continue;
+            }
+
+        }else{
+            if(temp < pointer){
+
+            }
+        }
+
+        temp = temp->right;
+    }
+
+    return 0;
 }

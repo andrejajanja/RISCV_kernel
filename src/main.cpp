@@ -13,8 +13,7 @@ int main(){
     //start user main
     int* ptr1 = (int*)mem_alloc(10);
     ptr1++;
-
-    mem_free(ptr1);
+    printUint((uint64)ptr1);
     //end user main
 
     stopEmulator();

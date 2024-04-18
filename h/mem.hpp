@@ -13,6 +13,7 @@ class MemoryAllocator{
 private:
     static MemSegment* segmentsHead;
     static uint32 segmentsNumber;
+    static uint32 totalSize;
 public:
     static void initialize();
     static void* mem_allocate(uint64 size);
