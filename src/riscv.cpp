@@ -25,17 +25,19 @@ void timerHandler(uint64 sepc, uint64 sstatus){
     writeSstatus(sstatus);
 }
 
-void systemCallHandler(){
-    uint64 opCode = readA0();
-    uint64 arg = readA1();
-    void* ptr;
+void systemCallHandler(uint64 a0, uint64 a1){
+    uint64 opCode = a0;
+    uint64 arg = a1;
+    uint64 retValue;
+
     switch (opCode) {
         case 0x01: //mem_alloc
-            ptr = MemoryAllocator::mem_allocate(arg);
-            writeA0((uint64)ptr);
+            retValue = (uint64)MemoryAllocator::mem_allocate(arg);
+            writeA0(retValue);
             break;
         case 0x02: //mem_free
-            printString("MEM_FREE SYS CALL\n");
+            retValue = (uint64)MemoryAllocator::mem_free((void*)arg);
+            writeA0(retValue);
             break;
         default: //some random code, that should be handler as error
             //this is error case, because no other case should go here, print something
@@ -48,6 +50,8 @@ void systemCallHandler(){
 }
 
 void ecallHandler(){
+    uint64 a0 = readA0();
+    uint64 a1 = readA1();
     uint64 scause = readScause();
     uint64 sepc = readSepc()+4;
     uint64 sstatus = readSstatus();
@@ -57,7 +61,7 @@ void ecallHandler(){
             timerHandler(sepc, sstatus);
             break;
         case 0x0000000000000008UL | 0x0000000000000009UL:
-            systemCallHandler();
+            systemCallHandler(a0,a1);
             break;
         case 0x0000000000000002UL:
             printString("OS DETECTED ERROR: Illegal instruction\nShutting down...\n");

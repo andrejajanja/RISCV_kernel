@@ -94,20 +94,39 @@ inline void printInt(int number){
         __putc('-');
     }
 
+    int digits[20];
+    int digitNum = 0;
     while(number > 0){
-        int digit = number%10;
-        __putc((char)(48+digit));
+        digits[digitNum] = number%10;
         number/=10;
+        digitNum++;
+    }
+
+    digitNum--;
+
+    while(digitNum>-1){
+        __putc((char)(48+digits[digitNum]));
+        digitNum--;
     }
     return;
 }
 
 inline void printUint(uint64 number){
+    int digits[20];
+    int digitNum = 0;
     while(number > 0){
-        int digit = number%10;
-        __putc((char)(48+digit));
+        digits[digitNum] = number%10;
         number/=10;
+        digitNum++;
     }
+
+    digitNum--;
+
+    while(digitNum>-1){
+        __putc((char)(48+digits[digitNum]));
+        digitNum--;
+    }
+
     return;
 }
 

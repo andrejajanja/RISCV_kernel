@@ -27,8 +27,8 @@ int mem_free(void* pointer){
     if(pointer == nullptr) return -1;
     //if((uint64) pointer > )
     asm("mv a1, %0;"
-        "li a0, 0x02;"
-        "ecall;": : "r"(pointer));
+        "li a0, 0x02;": : "r"(pointer));
+    asm("ecall;");
     uint64 value = readA0();
     return (int)value;
 }

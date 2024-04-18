@@ -12,8 +12,11 @@ int main(){
 
     //start user main
     int* ptr1 = (int*)mem_alloc(10);
-    ptr1++;
     printUint((uint64)ptr1);
+    int status = mem_free(ptr1);
+    printString("\n\n");
+    printInt(status);
+    printString("\n\n");
     //end user main
 
     stopEmulator();

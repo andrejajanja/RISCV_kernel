@@ -18,18 +18,21 @@ void MemoryAllocator::initialize(){
     totalSize = MemoryAllocator::segmentsHead->size;
 }
 
+// TODO TEST: check for bugs in this implementation - mem_allocate
 void* MemoryAllocator::mem_allocate(size_t size) {
     //doing some checks if it should even try to allocate space
     if(segmentsNumber == 0 || size > totalSize) return nullptr;
 
     //first fit algorithm -- TODO in the future, upgrade this to some exotic algorithm with binary tree
-    MemSegment* temp = segmentsHead;
-    while(temp){ // TODO TEST: check for bugs in this implementation
 
+    MemSegment* temp = segmentsHead;
+    while(temp){
         if(size == temp->size){
+            totalSize-=size; segmentsNumber--;
+
             if(temp->left) temp->left->right = temp->right;
             if(temp->right) temp->right->left = temp->left;
-            segmentsNumber--;
+
             *((size_t*)temp) = size; //this is size in segments stored in metadata
             temp += sizeof(size_t); //shift pointer to account for metadata
             return (void*)temp;
@@ -46,9 +49,10 @@ void* MemoryAllocator::mem_allocate(size_t size) {
 
             if(temp == segmentsHead) segmentsHead += offset;
 
-            *((size_t*)temp) = size; //this is size in segments stored in metadata
-            temp += sizeof(size_t); //shift pointer to account for metadata
-            return (void*)temp;
+            size_t* tempMeta = (size_t*)temp;
+            *((size_t*)tempMeta) = size; //this is size segments stored in metadata
+            tempMeta += sizeof(size_t); //shift pointer to account for metadata
+            return (void*)tempMeta;
         }
         temp = temp->right;
     }
@@ -57,31 +61,62 @@ void* MemoryAllocator::mem_allocate(size_t size) {
     return nullptr;
 }
 
+// TODO TEST: check for bugs in this implementation - mem_free
 int MemoryAllocator::mem_free(void* ptr) {
-    size_t offset = *((size_t*)ptr-sizeof(size_t)) * MEM_BLOCK_SIZE;
+    size_t size = *((size_t*)(ptr)-sizeof(size_t)); //TODO maybe optimize these 4 lines
     MemSegment* pointer = (MemSegment*)ptr-sizeof(size_t);
+    totalSize += size;
+    pointer->size = size;
 
-    printUint(offset);
+    //5,6
+    size_t offset = size*MEM_BLOCK_SIZE;
 
-    //TODO MEM_FREE: WRITE THIS ON PAPER SO YOU GET ALL THE EDGE CASES RIGHT!!!
-    MemSegment* temp = segmentsHead;
-    while(temp){
-        //detect between which segments is this segment to be fred up
-        if(temp->right){
-            if(temp < pointer && pointer < temp->right){
+    if(pointer > segmentsHead){
+        pointer->left = nullptr;
 
-            }else{
-                temp = temp->right;
-                continue;
-            }
-
-        }else{
-            if(temp < pointer){
-
-            }
+        if(pointer+offset == segmentsHead){ //5 try join from the right
+            pointer->right = segmentsHead->right;
+            pointer->size+=segmentsHead->size;
+        }else{ //6 couldn't do join :(
+            pointer->right = segmentsHead;
+            segmentsHead->left = pointer;
         }
 
-        temp = temp->right;
+        segmentsHead = pointer;
+        return 0;
+    }
+
+    MemSegment* temp = segmentsHead;
+    while(temp){ //TODO tidy this entire while loop up
+        if(temp->right){ //1, 2, 3, 4
+            if(temp < pointer && pointer < temp->right){
+                if(pointer + offset == temp->right){ //3 or 4
+                    pointer->size += temp->right->size;
+                    pointer->right = temp->right->right;
+                    pointer->left = temp->left;
+                }
+
+                if(temp + temp->size*MEM_BLOCK_SIZE == pointer){ //2 or 4
+                    temp->size += pointer->size;
+                    if(pointer->left == temp){
+                        temp->right = pointer->right;
+                    }
+                }
+
+                return 0;
+            }
+
+            temp = temp->right;
+        }else{ // 7, 8
+            if(temp + temp->size*MEM_BLOCK_SIZE == pointer){ //8
+                temp->size += pointer->size;
+            }else{ //7
+                temp->right = pointer;
+                pointer->left = temp;
+            }
+
+            return 0;
+        }
     }
 
     return 0;
