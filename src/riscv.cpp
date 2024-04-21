@@ -3,6 +3,7 @@
 //
 
 #include "../h/riscv.hpp"
+#include "../h/printing.hpp"
 #include "../h/mem.hpp"
 
 void initializeSystemRegisters(){
@@ -20,7 +21,7 @@ void stopEmulator(){
 
 void timerHandler(uint64 sepc, uint64 sstatus){
     //trigger context switch or something
-    printString("TIMER SIGNAL");
+    printType("TIMER SIGNAL");
     writeSepc(sepc);
     writeSstatus(sstatus);
 }
@@ -41,9 +42,9 @@ void systemCallHandler(uint64 a0, uint64 a1){
             break;
         default: //some random code, that should be handler as error
             //this is error case, because no other case should go here, print something
-            printString("OS DETECTED ERROR: Unhandled opCode value for system call: '");
-            printUint(opCode);
-            printString("' ,shutting down...\n");
+            printType("OS DETECTED ERROR: Unhandled opCode value for system call: '");
+            printType(opCode);
+            printType("' ,shutting down...\n");
             stopEmulator();
             break;
     };
@@ -64,22 +65,22 @@ void ecallHandler(){
             systemCallHandler(a0,a1);
             break;
         case 0x0000000000000002UL:
-            printString("OS DETECTED ERROR: Illegal instruction\nShutting down...\n");
+            printType("OS DETECTED ERROR: Illegal instruction\nShutting down...\n");
             stopEmulator();
             break;
         case 0x0000000000000005UL:
-            printString("OS DETECTED ERROR: reading from forbidden address\nShutting down...\n");
+            printType("OS DETECTED ERROR: reading from forbidden address\nShutting down...\n");
             stopEmulator();
             break;
         case 0x0000000000000007UL:
-            printString("OS DETECTED ERROR: writing to forbidden address\nShutting down...\n");
+            printType("OS DETECTED ERROR: writing to forbidden address\nShutting down...\n");
             stopEmulator();
             break;
         default:
             //this is error case, because no other case should go here, print something
-            printString("OS DETECTED ERROR: Unhandled scause value: '");
-            printUint(scause);
-            printString("'\nShutting down...\n");
+            printType("OS DETECTED ERROR: Unhandled scause value: '");
+            printType(scause);
+            printType("'\nShutting down...\n");
             stopEmulator();
             break;
     }

@@ -18,12 +18,12 @@ void MemoryAllocator::initialize(){
     totalSize = MemoryAllocator::segmentsHead->size;
 }
 
-// TODO TEST: check for bugs in this implementation - mem_allocate
+//TODO TEST: check for bugs in this implementation - mem_allocate
 void* MemoryAllocator::mem_allocate(size_t size) {
     //doing some checks if it should even try to allocate space
     if(segmentsNumber == 0 || size > totalSize) return nullptr;
 
-    //first fit algorithm -- TODO in the future, upgrade this to some exotic algorithm with binary tree
+    //TODO in the future, upgrade 'first fit' to some exotic algorithm with binary tree
 
     MemSegment* temp = segmentsHead;
     while(temp){
@@ -61,9 +61,10 @@ void* MemoryAllocator::mem_allocate(size_t size) {
     return nullptr;
 }
 
-// TODO TEST: check for bugs in this implementation - mem_free
+//TODO TEST: check for bugs in this implementation - mem_free
 int MemoryAllocator::mem_free(void* ptr) {
-    size_t size = *((size_t*)(ptr)-sizeof(size_t)); //TODO maybe optimize these 4 lines
+    //TODO optimize these 4 lines
+    size_t size = *((size_t*)(ptr)-sizeof(size_t));
     MemSegment* pointer = (MemSegment*)ptr-sizeof(size_t);
     totalSize += size;
     pointer->size = size;
@@ -87,7 +88,8 @@ int MemoryAllocator::mem_free(void* ptr) {
     }
 
     MemSegment* temp = segmentsHead;
-    while(temp){ //TODO tidy this entire while loop up
+    //TODO tidy this entire while loop up
+    while(temp){
         if(temp->right){ //1, 2, 3, 4
             if(temp < pointer && pointer < temp->right){
                 if(pointer + offset == temp->right){ //3 or 4

@@ -6,7 +6,6 @@
 #define RISCV_KERNEL_RISCV_H
 
 #include "../lib/hw.h"
-#include "../lib/console.h"
 
 //register operations
 
@@ -73,61 +72,5 @@ void initializeSystemRegisters();
 extern void ecallWrapper();
 void ecallHandler();
 void stopEmulator();
-
-//some ubiquidous functions
-inline void printString(const char* str){
-    while (*str != '\0'){
-        __putc(*str);
-        str++;
-    }
-    return;
-}
-
-inline void printInt(int number){
-    if(number==0){
-        __putc('0');
-        __putc('\n');
-        return;
-    }
-
-    if(number < 0){
-        __putc('-');
-    }
-
-    int digits[20];
-    int digitNum = 0;
-    while(number > 0){
-        digits[digitNum] = number%10;
-        number/=10;
-        digitNum++;
-    }
-
-    digitNum--;
-
-    while(digitNum>-1){
-        __putc((char)(48+digits[digitNum]));
-        digitNum--;
-    }
-    return;
-}
-
-inline void printUint(uint64 number){
-    int digits[20];
-    int digitNum = 0;
-    while(number > 0){
-        digits[digitNum] = number%10;
-        number/=10;
-        digitNum++;
-    }
-
-    digitNum--;
-
-    while(digitNum>-1){
-        __putc((char)(48+digits[digitNum]));
-        digitNum--;
-    }
-
-    return;
-}
 
 #endif //RISCV_KERNEL_RISCV_H

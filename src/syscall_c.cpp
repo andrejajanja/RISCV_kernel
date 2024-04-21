@@ -4,12 +4,10 @@
 #include "../h/syscall_c.hpp"
 
 void* mem_alloc(uint64 size){
-
+    if(size == 0) return nullptr; //allocating memory chunks of 0 bytes isn't allowed
     size += sizeof(size_t); //this is to account for metadata for size of allocated segment
 
-    //recalculating size to be number of memory blocks, instead of bytes.
-    if(size == 0) return nullptr;
-    if(size < MEM_BLOCK_SIZE){
+    if(size < MEM_BLOCK_SIZE){ //recalculating size to be number of memory blocks, instead of bytes
         size = 1;
     }else{
         size = size/MEM_BLOCK_SIZE+1;
