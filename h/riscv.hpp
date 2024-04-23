@@ -34,6 +34,42 @@ inline uint64 readA1(){
     return value;
 }
 
+inline uint64 readA2(){
+    uint64 value;
+    asm("mv %0, a2;": "=r"(value));
+    return value;
+}
+
+inline uint64 readA3(){
+    uint64 value;
+    asm("mv %0, a3;": "=r"(value));
+    return value;
+}
+
+inline uint64 readA4(){
+    uint64 value;
+    asm("mv %0, a4;": "=r"(value));
+    return value;
+}
+
+inline uint64 readA5(){
+    uint64 value;
+    asm("mv %0, a5;": "=r"(value));
+    return value;
+}
+
+inline uint64 readA6(){
+    uint64 value;
+    asm("mv %0, a6;": "=r"(value));
+    return value;
+}
+
+inline uint64 readA7(){
+    uint64 value;
+    asm("mv %0, a7;": "=r"(value));
+    return value;
+}
+
 inline uint64 readSepc(){
     uint64 value;
     asm("csrr %0, sepc;": "=r"(value));

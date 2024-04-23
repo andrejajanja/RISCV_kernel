@@ -7,8 +7,7 @@
 #include "../h/printing.hpp"
 
 void userMain(){
-
-    printf("Tvoja %s ima %d godina\n", "keva", 16);
+    printf("Tvoja %s ima: %d godina.\n", "keva", 10);
 
     return;
 }
