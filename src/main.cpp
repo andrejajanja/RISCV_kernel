@@ -5,10 +5,10 @@
 #include "../h/mem.hpp"
 #include "../h/syscall_c.hpp"
 #include "../h/printing.hpp"
+#include "../h/exception.hpp"
 
 void userMain(){
-    printf("Tvoja %s ima: %d godina.\n", "keva", 10);
-
+    Exception("NEKI EXCP");
     return;
 }
 

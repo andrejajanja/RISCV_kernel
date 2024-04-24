@@ -25,8 +25,18 @@ int mem_free(void* pointer){
     if(pointer == nullptr) return -1;
     //if((uint64) pointer > )
     asm("mv a1, %0;"
-        "li a0, 0x02;": : "r"(pointer));
-    asm("ecall;");
+        "li a0, 0x02;"
+        "ecall;": : "r"(pointer));
+    uint64 value = readA0();
+    return (int)value;
+}
+
+int create_thread(thread_t* handle, void(*start_routine)(void*), void* arg){
+    asm("mv a3, %0;"
+        "mv a2, %1;"
+        "mv a1, %2;"
+        "li a0, 0x11;"
+        "ecall": : "r"(arg), "r"(start_routine), "r"(handle) );
     uint64 value = readA0();
     return (int)value;
 }
