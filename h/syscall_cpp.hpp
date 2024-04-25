@@ -6,10 +6,11 @@
 #define RISCV_KERNEL_SYSCALL_CPP_H
 
 #include "../h/syscall_c.hpp"
+#include "../h/exception.hpp"
 
 //global memory operators
-void* ::operator new (size_t);
-void ::operator delete (void*);
+void* operator new (size_t);
+void operator delete (void*);
 
 //thread
 class Thread{

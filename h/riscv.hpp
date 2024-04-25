@@ -108,5 +108,6 @@ void initializeSystemRegisters();
 extern void ecallWrapper();
 void ecallHandler();
 void stopEmulator();
+void printSystemState(bool = false, bool = false, bool = false);
 
 #endif //RISCV_KERNEL_RISCV_H

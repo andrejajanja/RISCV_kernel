@@ -3,7 +3,6 @@
 //
 
 #include "../h/mem.hpp"
-#include "../h/riscv.hpp"
 
 MemSegment* MemoryAllocator::segmentsHead = nullptr;
 uint32 MemoryAllocator::totalSize = 0;
@@ -18,7 +17,17 @@ void MemoryAllocator::initialize(){
     totalSize = MemoryAllocator::segmentsHead->size;
 }
 
-//TODO TEST: check for bugs in this implementation - mem_allocate
+void MemoryAllocator::print_segments() {
+    printf("- Free memory segments (pointer, size in blocks of %uB) -\n", MEM_BLOCK_SIZE);
+    MemSegment* temp = segmentsHead;
+    uint16 i = 1;
+    while(temp >= HEAP_START_ADDR){
+        printf("%u. %u %u\n", i, (uint64)temp, temp->size);
+        i++; temp = temp->right;
+    }
+    printf("- End memory segments -\n");
+}
+
 void* MemoryAllocator::mem_allocate(size_t size) {
     //doing some checks if it should even try to allocate space
     if(segmentsNumber == 0 || size > totalSize) return nullptr;
@@ -40,18 +49,18 @@ void* MemoryAllocator::mem_allocate(size_t size) {
 
         if(size < temp->size){
             size_t offset = size*MEM_BLOCK_SIZE;
-            if(temp->left) temp->left->right = temp + offset;
-            if(temp->right) temp->right->left = temp + offset;
+            if(temp->left) temp->left->right = (MemSegment*)((size_t)temp + offset);
+            if(temp->right) temp->right->left = (MemSegment*)((size_t)temp + offset);
 
-            (temp + offset)->left = temp->left;
-            (temp + offset)->right = temp->right;
-            (temp + offset)->size = temp->size-size;
+            ((MemSegment*)((size_t)temp + offset))->left= temp->left;
+            ((MemSegment*)((size_t)temp + offset))->right = temp->right;
+            ((MemSegment*)((size_t)temp + offset))->size = temp->size-size;
 
-            if(temp == segmentsHead) segmentsHead += offset;
+            if(temp == segmentsHead) segmentsHead = (MemSegment*)((size_t)segmentsHead +offset);
 
             size_t* tempMeta = (size_t*)temp;
             *((size_t*)tempMeta) = size; //this is size segments stored in metadata
-            tempMeta += sizeof(size_t); //shift pointer to account for metadata
+            tempMeta = (size_t*)((size_t)tempMeta + sizeof(size_t)); //shift pointer to account for metadata
             return (void*)tempMeta;
         }
         temp = temp->right;
@@ -61,23 +70,22 @@ void* MemoryAllocator::mem_allocate(size_t size) {
     return nullptr;
 }
 
-//TODO TEST: check for bugs in this implementation - mem_free
 int MemoryAllocator::mem_free(void* ptr) {
     //TODO optimize these 4 lines
-    size_t size = *((size_t*)(ptr)-sizeof(size_t));
-    MemSegment* pointer = (MemSegment*)ptr-sizeof(size_t);
+    size_t size = *(size_t*)((uint64)(ptr)-sizeof(size_t));
+    MemSegment* pointer = (MemSegment*)((uint64)ptr-sizeof(size_t));
     totalSize += size;
-    pointer->size = size;
+    pointer->size = size; pointer->left = nullptr; pointer->right = nullptr;
 
     //5,6
     size_t offset = size*MEM_BLOCK_SIZE;
 
-    if(pointer > segmentsHead){
+    if(pointer < segmentsHead){
         pointer->left = nullptr;
 
-        if(pointer+offset == segmentsHead){ //5 try join from the right
+        if((MemSegment*)((uint64)pointer+offset) == segmentsHead){ //5 try join from the right
             pointer->right = segmentsHead->right;
-            pointer->size+=segmentsHead->size;
+            pointer->size += segmentsHead->size;
         }else{ //6 couldn't do join :(
             pointer->right = segmentsHead;
             segmentsHead->left = pointer;
@@ -92,15 +100,18 @@ int MemoryAllocator::mem_free(void* ptr) {
     while(temp){
         if(temp->right){ //1, 2, 3, 4
             if(temp < pointer && pointer < temp->right){
-                if(pointer + offset == temp->right){ //3 or 4
+                bool case3happened = false;
+                if((MemSegment*)((uint64)pointer+offset) == temp->right){ //3 or 4
                     pointer->size += temp->right->size;
                     pointer->right = temp->right->right;
                     pointer->left = temp->left;
+                    temp->right = pointer;
+                    case3happened = true;
                 }
 
-                if(temp + temp->size*MEM_BLOCK_SIZE == pointer){ //2 or 4
+                if((MemSegment*)((uint64)temp + temp->size*MEM_BLOCK_SIZE) == pointer){ //2 or 4
                     temp->size += pointer->size;
-                    if(pointer->left == temp){
+                    if(case3happened){
                         temp->right = pointer->right;
                     }
                 }
@@ -110,7 +121,7 @@ int MemoryAllocator::mem_free(void* ptr) {
 
             temp = temp->right;
         }else{ // 7, 8
-            if(temp + temp->size*MEM_BLOCK_SIZE == pointer){ //8
+            if((MemSegment*)((uint64)temp + temp->size*MEM_BLOCK_SIZE) == pointer){ //8
                 temp->size += pointer->size;
             }else{ //7
                 temp->right = pointer;

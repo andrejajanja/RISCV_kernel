@@ -8,6 +8,8 @@
 #include "../h/pcb.hpp"
 #include "../h/scheduler.hpp"
 
+uint16 numberofSystemPrint = 1;
+
 void initializeSystemRegisters(){
     writeStvec((uint64)&ecallWrapper);
     //asm("la t0, _Z12ecallWrapperv;"
@@ -21,6 +23,15 @@ void stopEmulator(){
         "sw t1, 0(t0);");
 }
 
+void printSystemState(bool memmory, bool threads, bool semaphores){
+    printf("\n-- %u. System state (data structures) --\n", numberofSystemPrint);
+    numberofSystemPrint++;
+    if(memmory){
+        MemoryAllocator::print_segments();
+    }
+}
+
+//system calls handlers
 void timerHandler(uint64 sepc, uint64 sstatus){
     //trigger context switch or something
     printType("TIMER SIGNAL");
@@ -31,8 +42,8 @@ void timerHandler(uint64 sepc, uint64 sstatus){
 void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
     uint64 opCode = a0;
     uint64 arg1 = a1;
-    uint64 arg2 = a2;
-    uint64 arg3 = a3;
+    //uint64 arg2 = a2;
+    //uint64 arg3 = a3;
     uint64 retValue;
 
     switch (opCode) {
@@ -41,7 +52,7 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
             writeA0(retValue);
             break;
         case 0x02: //mem_free
-            retValue = (uint64)MemoryAllocator::mem_free((void*)arg2);
+            retValue = (uint64)MemoryAllocator::mem_free((void*)arg1);
             writeA0(retValue);
             break;
         case 0x11:
@@ -81,7 +92,7 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
             printf("Usao sam u putc\n");
             break;
         case 0x50:
-            printf("User called an Exception,\nMessage: %s", (const char*)(a1));
+            printf("User called an Exception,\nMessage: %s\n\n", (const char*)(a1));
             stopEmulator();
             break;
         default: //some random code, that should be handler as error

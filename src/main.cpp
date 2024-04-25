@@ -7,8 +7,27 @@
 #include "../h/printing.hpp"
 #include "../h/exception.hpp"
 
+
+class Tacka{
+public:
+    Tacka(int x, int y){
+        this->x = x;
+        this->y = y;
+    }
+    void pt(){}
+
+private:
+    int x,y;
+};
+
 void userMain(){
-    Exception("NEKI EXCP");
+    printSystemState(true);
+    Tacka* t1 = new Tacka(5,6);
+    Tacka* t2 = new Tacka(5,6);
+    Tacka* t3 = new Tacka(5,6);
+    delete t2;
+    delete t3;
+    delete t1;
     return;
 }
 
