@@ -86,7 +86,7 @@ template <typename T>
 class Iterator{
 public:
     Iterator(Element<T>* beginning, short size);
-    bool isFinnished();
+    bool hasElements();
     void operator++();
     T operator*();
 

@@ -26,7 +26,7 @@ void userMain(){
     li->appendBack(30);
     li->appendBack(40);
 
-    for(auto iter = li->getIterator(); iter.isFinnished(); ++iter){
+    for(auto iter = li->getIterator(); iter.hasElements(); ++iter){
         printf("%d, ", *iter);
     }
 

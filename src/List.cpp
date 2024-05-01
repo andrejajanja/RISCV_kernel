@@ -217,7 +217,7 @@ template <typename T>
 Iterator<T>::Iterator(Element<T>* beginning, short size): temp(beginning), elemIndex(0), size(size) {}
 
 template <typename T>
-bool Iterator<T>::isFinnished() {
+bool Iterator<T>::hasElements() {
     return !(elemIndex == size);
 }
 
