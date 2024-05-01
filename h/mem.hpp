@@ -16,6 +16,7 @@ public:
     static void* mem_allocate(uint64 size);
     static int mem_free(void* ptr);
     static void print_segments();
+
 private:
     static MemSegment* segmentsHead;
     static uint32 segmentsNumber;

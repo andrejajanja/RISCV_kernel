@@ -7,8 +7,9 @@
 #include "../h/mem.hpp"
 #include "../h/pcb.hpp"
 #include "../h/scheduler.hpp"
+#include "../h/syscall_cpp.hpp"
 
-uint16 numberofSystemPrint = 1;
+uint16 numberOfSystemPrint = 1;
 
 void initializeSystemRegisters(){
     writeStvec((uint64)&ecallWrapper);
@@ -17,6 +18,7 @@ void initializeSystemRegisters(){
 }
 
 void stopEmulator(){
+    printf("\n\t-- Shutting down --\n");
     //defined in project file
     asm("la t0, 0x100000;" //adress
         "la t1, 0x5555;" //value
@@ -24,11 +26,16 @@ void stopEmulator(){
 }
 
 void printSystemState(bool memmory, bool threads, bool semaphores){
-    printf("\n-- %u. System state (data structures) --\n", numberofSystemPrint);
-    numberofSystemPrint++;
+    printf("\n-- %u. System state (data structures) --\n", numberOfSystemPrint);
+    numberOfSystemPrint++;
     if(memmory){
         MemoryAllocator::print_segments();
     }
+}
+
+void sysCallExcepiton(const char* msg){
+    printf("OS called exception,\nMessage: %s\n\n", msg);
+    stopEmulator();
 }
 
 //system calls handlers
@@ -39,25 +46,41 @@ void timerHandler(uint64 sepc, uint64 sstatus){
     writeSstatus(sstatus);
 }
 
-void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
-    uint64 opCode = a0;
-    uint64 arg1 = a1;
-    //uint64 arg2 = a2;
-    //uint64 arg3 = a3;
-    uint64 retValue;
+void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3, uint64 a4){
+    uint64 opCode = a0; uint64 arg1 = a1;
+    uint64 arg2 = a2; uint64 arg3 = a3;
+    uint64 arg4 = a4; uint64 retValue;
+    uint64 size = 0;
 
     switch (opCode) {
         case 0x01: //mem_alloc
             retValue = (uint64)MemoryAllocator::mem_allocate(arg1);
             writeA0(retValue);
             break;
+
         case 0x02: //mem_free
             retValue = (uint64)MemoryAllocator::mem_free((void*)arg1);
             writeA0(retValue);
             break;
-        case 0x11:
-            printf("Usao sam u thread create\n");
+
+        case 0x11: //thread_create
+            retValue = arg1;
+            size = sizeof(ThreadState);
+            size += sizeof(size_t); //this is to account for metadata for size of allocated segment
+            if(size < MEM_BLOCK_SIZE){ //recalculating size to be number of memory blocks, instead of bytes
+                size = 1;
+            }else{
+                size = size/MEM_BLOCK_SIZE+1;
+            }
+
+            *((thread_t*)retValue) = (ThreadState*)MemoryAllocator::mem_allocate(size); //ovo zeza
+            if(!*((thread_t*)retValue)){
+                sysCallExcepiton("Failed to allocate space for ThreadState stucture.");
+            }
+            PCB::initializeState(*((thread_t*)retValue), (void*)arg2, (void*)arg3, (void*)arg4);
+            writeA0(0);
             break;
+
         case 0x12:
             printf("Usao sam u thread exit\n");
             break;
@@ -97,9 +120,7 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
             break;
         default: //some random code, that should be handler as error
             //this is error case, because no other case should go here, print something
-            printType("OS DETECTED ERROR: Unhandled opCode value for system call: '");
-            printType(opCode);
-            printType("' ,shutting down...\n");
+            printf("OS DETECTED ERROR: Unhandled opCode value for system call: '%u'\n", opCode);
             stopEmulator();
             break;
     };
@@ -110,6 +131,7 @@ void ecallHandler(){
     uint64 a1 = readA1();
     uint64 a2 = readA2();
     uint64 a3 = readA3();
+    uint64 a4 = readA4();
     uint64 scause = readScause();
     uint64 sepc = readSepc()+4;
     uint64 sstatus = readSstatus();
@@ -119,23 +141,23 @@ void ecallHandler(){
             timerHandler(sepc, sstatus);
             break;
         case 0x0000000000000008UL | 0x0000000000000009UL:
-            systemCallHandler(a0, a1, a2, a3);
+            systemCallHandler(a0, a1, a2, a3, a4);
             break;
         case 0x0000000000000002UL:
-            printType("OS DETECTED ERROR: Illegal instruction\nShutting down...\n");
+            printType("OS DETECTED ERROR: Illegal instruction\n");
             stopEmulator();
             break;
         case 0x0000000000000005UL:
-            printType("OS DETECTED ERROR: reading from forbidden address\nShutting down...\n");
+            printType("OS DETECTED ERROR: reading from forbidden address\n");
             stopEmulator();
             break;
         case 0x0000000000000007UL:
-            printType("OS DETECTED ERROR: writing to forbidden address\nShutting down...\n");
+            printType("OS DETECTED ERROR: writing to forbidden address\n");
             stopEmulator();
             break;
         default:
             //this is error case, because no other case should go here, print something
-            printf("OS DETECTED ERROR: Unhandled scause value: '%u'\nShutting down...\n", scause);
+            printf("OS DETECTED ERROR: Unhandled scause value: '%u'\n", scause);
             stopEmulator();
             break;
     }

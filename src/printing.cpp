@@ -64,6 +64,21 @@ void printType(uint64 number){
     return;
 }
 
+void printType(bool cond){
+    if(cond){
+        __putc('t');
+        __putc('r');
+        __putc('u');
+        __putc('e');
+    }else{
+        __putc('f');
+        __putc('a');
+        __putc('l');
+        __putc('s');
+        __putc('e');
+    }
+}
+
 //printf - implemented to work in the same way as printf from stdio.h
 void printf(const char* str, ...){
     //... are registers a1 to a7
@@ -89,6 +104,9 @@ void printf(const char* str, ...){
                     break;
                 case 'u': //unsigned number - uint64
                     printType(arg_val[arg_cnt]);
+                    break;
+                case 'b': //bool
+                    printType((bool)arg_cnt);
                     break;
                 default:
                     printType("\nPRINTF ERROR: invalid formating letter in printf.\n");

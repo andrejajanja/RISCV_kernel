@@ -3,31 +3,39 @@
 //
 #include "../h/riscv.hpp"
 #include "../h/mem.hpp"
-#include "../h/syscall_c.hpp"
-#include "../h/printing.hpp"
-#include "../h/exception.hpp"
+//#include "../h/syscall_c.hpp"
+#include "../h/List.hpp"
 
-
-class Tacka{
-public:
-    Tacka(int x, int y){
-        this->x = x;
-        this->y = y;
-    }
-    void pt(){}
-
-private:
-    int x,y;
-};
+//class Tacka{
+//private:
+//    int x, y;
+//public:
+//    Tacka(int x, int y): x(x), y(y){}
+//    void print(){
+//        printf("Tacka: (%d, %d)\n", x, y);
+//    }
+//};
+//
+//void writeX(void* x){
+//    *((int*)(x)) = 10;
+//}
 
 void userMain(){
-    printSystemState(true);
-    Tacka* t1 = new Tacka(5,6);
-    Tacka* t2 = new Tacka(5,6);
-    Tacka* t3 = new Tacka(5,6);
-    delete t2;
-    delete t3;
-    delete t1;
+    List<int>* li = new List<int>(10);
+    li->appendBack(20);
+    li->appendBack(30);
+    li->appendBack(40);
+
+    for(auto iter = li->getIterator(); iter.isFinnished(); ++iter){
+        printf("%d, ", *iter);
+    }
+
+    delete li;
+
+//    thread_t t1;
+//    int x = 10;
+//    thread_create(&t1, &writeX, &x);
+
     return;
 }
 

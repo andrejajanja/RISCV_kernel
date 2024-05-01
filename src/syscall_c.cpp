@@ -31,12 +31,14 @@ int mem_free(void* pointer){
     return (int)value;
 }
 
-int create_thread(thread_t* handle, void(*start_routine)(void*), void* arg){
-    asm("mv a3, %0;"
+int thread_create(thread_t* handle, void(*start_routine)(void*), void* arg){
+    void* stack_ptr = mem_alloc(DEFAULT_STACK_SIZE);
+    asm("mv a1, %2;"
         "mv a2, %1;"
-        "mv a1, %2;"
-        "li a0, 0x11;"
-        "ecall": : "r"(arg), "r"(start_routine), "r"(handle) );
+        "mv a3, %0;"
+        "mv a4, %3;"
+        "li a0, 0x11;": : "r"(arg), "r"(start_routine), "r"(handle), "r"(stack_ptr) );
+    asm("ecall;");
     uint64 value = readA0();
     return (int)value;
 }
