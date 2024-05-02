@@ -23,9 +23,9 @@ struct ThreadState{
 
 class PCB {
 public:
-    static void initializeState(ThreadState* ptr, void* start_routine, void* arg, void* stack_ptr);
+    static ThreadState* createState(void* start_routine, void* arg, void* stack_ptr);
     static void yield(PCB* t1, PCB* t2);
-private:
+
     static ThreadState* running;
 
     static void setJmp(jmpbuf buffer);

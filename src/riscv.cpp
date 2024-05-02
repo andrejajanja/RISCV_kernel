@@ -31,11 +31,21 @@ void printSystemState(bool memmory, bool threads, bool semaphores){
     if(memmory){
         MemoryAllocator::print_segments();
     }
+
+    if(threads){
+        Scheduler::printThreads();
+    }
 }
 
 void sysCallExcepiton(const char* msg){
     printf("OS called exception,\nMessage: %s\n\n", msg);
     stopEmulator();
+}
+
+void initializeSystem(){
+    initializeSystemRegisters();
+    MemoryAllocator::initialize();
+    Scheduler::initialize();
 }
 
 //system calls handlers
@@ -50,7 +60,7 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3, uint64 a4){
     uint64 opCode = a0; uint64 arg1 = a1;
     uint64 arg2 = a2; uint64 arg3 = a3;
     uint64 arg4 = a4; uint64 retValue;
-    uint64 size = 0;
+    ThreadState* ts;
 
     switch (opCode) {
         case 0x01: //mem_alloc
@@ -65,24 +75,15 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3, uint64 a4){
 
         case 0x11: //thread_create
             retValue = arg1;
-            size = sizeof(ThreadState);
-            size += sizeof(size_t); //this is to account for metadata for size of allocated segment
-            if(size < MEM_BLOCK_SIZE){ //recalculating size to be number of memory blocks, instead of bytes
-                size = 1;
-            }else{
-                size = size/MEM_BLOCK_SIZE+1;
-            }
+            ts = PCB::createState((void*)arg2, (void*)arg3, (void*)arg4);
+            *((uint64*)retValue) = (uint64)ts;
+            Scheduler::put(ts);
 
-            *((thread_t*)retValue) = (ThreadState*)MemoryAllocator::mem_allocate(size); //ovo zeza
-            if(!*((thread_t*)retValue)){
-                sysCallExcepiton("Failed to allocate space for ThreadState stucture.");
-            }
-            PCB::initializeState(*((thread_t*)retValue), (void*)arg2, (void*)arg3, (void*)arg4);
             writeA0(0);
             break;
 
         case 0x12:
-            printf("Usao sam u thread exit\n");
+            printf("Started exit from running thread: %u\n", (uint64)PCB::running);
             break;
         case 0x13:
             printf("Usao sam u thread dispatch\n");

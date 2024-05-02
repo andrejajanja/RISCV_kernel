@@ -3,6 +3,8 @@
 //
 
 #include "../h/pcb.hpp"
+#include "../h/mem.hpp"
+#include "../h/riscv.hpp"
 
 // register name macros, for more ergonomic access
 #define A0 0
@@ -14,16 +16,23 @@
 
 ThreadState* PCB::running = nullptr;
 
-void PCB::initializeState(ThreadState* ptr, void* start_routine, void* arg, void* stack_ptr){
+ThreadState* PCB::createState(void* start_routine, void* arg, void* stack_ptr){
+    size_t size = calculateSize<ThreadState>();
+    ThreadState* ptr = (ThreadState*)MemoryAllocator::mem_allocate(size + DEFAULT_STACK_SIZE);
+    if(ptr == nullptr){
+        sysCallExcepiton("Failed to allocate space for ThreadState data stucture.");
+    }
     ptr->st_p = stack_ptr;
     ptr->arg_ptr = arg;
     for (int i = 1; i < 27; i++) {
         ptr->registers[i] = 0;
     }
     ptr->registers[A0] = (uint64)arg;
-    ptr->registers[SP] = (uint64)stack_ptr;
+    //TODO check if this works as it should (optimization for stack pointer)
+    ptr->registers[SP] = (uint64)ptr+size;
     ptr->registers[RA] = (uint64)nullptr;
     ptr->registers[PC] = (uint64)start_routine;
+    return ptr;
 }
 
 //TODO implement setjump

@@ -3,6 +3,20 @@
 //
 
 #include "../h/mem.hpp"
+#include "../h/pcb.hpp"
+
+template<typename T>
+size_t calculateSize(){
+    size_t size = sizeof(T);
+    size += sizeof(size_t); //this is to account for metadata for size of allocated segment
+    if(size < MEM_BLOCK_SIZE){ //recalculating size to be number of memory blocks, instead of bytes
+        size = 1;
+    }else{
+        size = size/MEM_BLOCK_SIZE+1;
+    }
+
+    return size;
+}
 
 MemSegment* MemoryAllocator::segmentsHead = nullptr;
 uint32 MemoryAllocator::totalSize = 0;
@@ -134,3 +148,5 @@ int MemoryAllocator::mem_free(void* ptr) {
 
     return 0;
 }
+
+template size_t calculateSize<ThreadState>();

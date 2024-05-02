@@ -4,6 +4,9 @@
 #include "../lib/hw.h"
 #include "../h/printing.hpp"
 
+template<typename T>
+size_t calculateSize();
+
 struct MemSegment{
     MemSegment* left;
     MemSegment* right;

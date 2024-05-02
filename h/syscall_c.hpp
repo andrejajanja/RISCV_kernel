@@ -9,7 +9,6 @@ int mem_free(void* pointer);
 
 //threading
 int thread_create(thread_t* handle, void(*start_routine)(void*), void* arg);
-
 int thread_exit();
 int thread_dispatch();
 

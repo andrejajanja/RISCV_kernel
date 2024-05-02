@@ -111,5 +111,7 @@ extern void ecallWrapper();
 void ecallHandler();
 void stopEmulator();
 void printSystemState(bool = false, bool = false, bool = false);
+void sysCallExcepiton(const char* msg);
+void initializeSystem();
 
 #endif //RISCV_KERNEL_RISCV_H

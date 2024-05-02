@@ -38,7 +38,7 @@ public:
     List(T data);
     ~List();
 
-    Iterator<T> getIterator();
+    Iterator<T> getIterator() const;
 
     void appendFront(T data);
     void appendBack(T data);
@@ -53,25 +53,25 @@ public:
     T previous();
 
     T operator[](short index);
-    inline T getFirstElement(){
+    inline T getFirstElement() const{
         return listHead->data;
     }
-    inline T getLastElement(){
+    inline T getLastElement() const{
         return listBack->data;
     }
 
-    inline short getSize(){
+    inline short getSize() const{
         return count;
     }
-    inline short getLastSelectedIndex(){
+    inline short getLastSelectedIndex() const{
         return lastIndex;
     }
-    inline T getLastSelectedElement(){
+    inline T getLastSelectedElement() const {
         return lastElem->data;
     }
 
 private:
-    void checkIndex(short  index);
+    void checkIndex(short  index) const;
 
     Element<T>* listHead;
     Element<T>* listBack;
@@ -81,17 +81,18 @@ private:
     short count; //maximum of 65536 elements
 };
 
-#endif //RISCV_KERNEL_LIST_H
 template <typename T>
 class Iterator{
 public:
     Iterator(Element<T>* beginning, short size);
-    bool hasElements();
+    bool hasElements() const;
     void operator++();
-    T operator*();
+    T operator*() const;
 
 private:
     Element<T>* temp;
     short elemIndex;
     short size;
 };
+
+#endif //RISCV_KERNEL_LIST_H

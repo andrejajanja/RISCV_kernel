@@ -13,7 +13,7 @@ Element<T>::Element(T data): left(nullptr), right(nullptr), data(data) {}
 //-- List class definition --
 //private methods
 template <typename T>
-void List<T>::checkIndex(short index) {
+void List<T>::checkIndex(short index) const {
     if(count == 0) Exception("List is empty, thus no element can be accessed");
     if(index < 0 || index > this->count)
         Exception("List index out of range");
@@ -47,7 +47,7 @@ List<T>::~List(){
 }
 
 template <typename T>
-Iterator<T> List<T>::getIterator(){
+Iterator<T> List<T>::getIterator() const{
     return Iterator<T>(this->listHead, this->count);
 }
 
@@ -172,9 +172,10 @@ T List<T>::next() {
     if(count == 1){
         return listHead->data;
     }else{
+        T data = lastElem->data;
         (lastIndex == count-1)? lastIndex=0: lastIndex++;
         lastElem = lastElem->right;
-        return lastElem->data;
+        return data;
     }
 }
 
@@ -183,9 +184,10 @@ T List<T>::previous(){
     if(count == 1){
         return listHead->data;
     }else{
+        T data = lastElem->data;
         (lastIndex == 0)? lastIndex=count-1: lastIndex--;
         lastElem = lastElem->left;
-        return lastElem->data;
+        return data;
     }
 }
 
@@ -217,7 +219,7 @@ template <typename T>
 Iterator<T>::Iterator(Element<T>* beginning, short size): temp(beginning), elemIndex(0), size(size) {}
 
 template <typename T>
-bool Iterator<T>::hasElements() {
+bool Iterator<T>::hasElements() const {
     return !(elemIndex == size);
 }
 
@@ -228,7 +230,7 @@ void Iterator<T>::operator++() {
 }
 
 template <typename T>
-T Iterator<T>::operator*() {
+T Iterator<T>::operator*() const {
     return temp->data;
 }
 

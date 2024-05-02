@@ -2,9 +2,8 @@
 // Created by os on 4/13/24.
 //
 #include "../h/riscv.hpp"
-#include "../h/mem.hpp"
-//#include "../h/syscall_c.hpp"
-#include "../h/List.hpp"
+#include "../h/syscall_c.hpp"
+#include "../h/sys_list.hpp"
 
 //class Tacka{
 //private:
@@ -20,32 +19,23 @@
 //    *((int*)(x)) = 10;
 //}
 
-void userMain(){
-    List<int>* li = new List<int>(10);
-    li->appendBack(20);
-    li->appendBack(30);
-    li->appendBack(40);
-
-    for(auto iter = li->getIterator(); iter.hasElements(); ++iter){
-        printf("%d, ", *iter);
-    }
-
-    delete li;
+void userMain(void*){
+    printf("Ovo je main fja koja se izvrsila.");
 
 //    thread_t t1;
 //    int x = 10;
 //    thread_create(&t1, &writeX, &x);
-
     return;
 }
 
 int main(){
-    //initialize system data structures and register values
-    initializeSystemRegisters();
-    MemoryAllocator::initialize();
+    initializeSystem();
 
-    userMain();
-
+    thread_t mainThread;
+    printSystemState(true, true, false);
+    thread_create(&mainThread, &userMain, nullptr);
+    printSystemState(true, true, false);
+    thread_exit();
     stopEmulator();
     return 0;
 }

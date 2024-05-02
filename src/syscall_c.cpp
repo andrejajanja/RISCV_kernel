@@ -14,8 +14,8 @@ void* mem_alloc(uint64 size){
     }
 
     asm("mv a1, %0;"
-        "li a0, 0x01;" : : "r"(size));
-    asm("ecall;");
+        "li a0, 0x01;"
+        "ecall;" : : "r"(size));
 
     uint64 value = readA0();
     return (void*)value;
@@ -32,13 +32,18 @@ int mem_free(void* pointer){
 }
 
 int thread_create(thread_t* handle, void(*start_routine)(void*), void* arg){
-    void* stack_ptr = mem_alloc(DEFAULT_STACK_SIZE);
     asm("mv a1, %2;"
         "mv a2, %1;"
         "mv a3, %0;"
-        "mv a4, %3;"
-        "li a0, 0x11;": : "r"(arg), "r"(start_routine), "r"(handle), "r"(stack_ptr) );
-    asm("ecall;");
+        "li a0, 0x11;"
+        "ecall;": : "r"(arg), "r"(start_routine), "r"(handle));
+    uint64 value = readA0();
+    return (int)value;
+}
+
+int thread_exit(){
+    asm("li a0, 0x12;"
+        "ecall;");
     uint64 value = readA0();
     return (int)value;
 }

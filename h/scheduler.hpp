@@ -6,16 +6,17 @@
 #define RISCV_KERNEL_SCHEDULER_H
 
 #include "pcb.hpp"
-#include "List.hpp"
+#include "sys_list.hpp"
 
 class Scheduler {
 public:
+    static void initialize();
     static void put(ThreadState* ts);
     static ThreadState* get();
-    static void block(ThreadState* ts);
+    static void remove(ThreadState* ts);
+    static void printThreads();
 private:
-    static List<ThreadState> pool;
-    static List<ThreadState> blocked;
+    static SysList<ThreadState*>* pool;
 };
 
 
