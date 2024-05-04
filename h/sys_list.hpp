@@ -24,7 +24,7 @@ Element<T>* constructElement(){
     }else{
         size = size/MEM_BLOCK_SIZE+1;
     }
-    Element<T>* temp = (Element<T>*)MemoryAllocator::mem_allocate(size);
+    auto temp = (Element<T>*)MemoryAllocator::mem_allocate(size);
     return temp;
 }
 
@@ -47,7 +47,7 @@ public:
     Iterator(Element<T>* beginning, short size);
 
     bool hasElements() const {
-        return !(elemIndex == size);
+        return elemIndex != size;
     }
     inline void operator++() {
         temp = temp->right;

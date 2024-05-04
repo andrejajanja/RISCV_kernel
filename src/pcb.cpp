@@ -14,15 +14,15 @@
 #define TP 30
 #define PC 31
 
-ThreadState* PCB::running = nullptr;
+thread_t* PCB::running = nullptr;
 
 ThreadState* PCB::createState(void* start_routine, void* arg, void* stack_ptr){
     size_t size = calculateSize<ThreadState>();
-    ThreadState* ptr = (ThreadState*)MemoryAllocator::mem_allocate(size + DEFAULT_STACK_SIZE);
+    auto ptr = (ThreadState*)MemoryAllocator::mem_allocate(size + DEFAULT_STACK_SIZE);
     if(ptr == nullptr){
         sysCallExcepiton("Failed to allocate space for ThreadState data stucture.");
     }
-    ptr->st_p = stack_ptr;
+    ptr->st_p = (void*)((size_t)ptr + size);
     ptr->arg_ptr = arg;
     for (int i = 1; i < 27; i++) {
         ptr->registers[i] = 0;

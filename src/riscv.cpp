@@ -11,13 +11,7 @@
 
 uint16 numberOfSystemPrint = 1;
 
-void initializeSystemRegisters(){
-    writeStvec((uint64)&ecallWrapper);
-    //asm("la t0, _Z12ecallWrapperv;"
-    //"csrw stvec, t0;");
-}
-
-void stopEmulator(){
+void Riscv::stopEmulator(){
     printf("\n\t-- Shutting down --\n");
     //defined in project file
     asm("la t0, 0x100000;" //adress
@@ -39,21 +33,22 @@ void printSystemState(bool memmory, bool threads, bool semaphores){
 
 void sysCallExcepiton(const char* msg){
     printf("OS called exception,\nMessage: %s\n\n", msg);
-    stopEmulator();
+    Riscv::stopEmulator();
 }
 
-void initializeSystem(){
-    initializeSystemRegisters();
+void Riscv::initializeSystem(){
+    Riscv::writeStvec((uint64)&ecallWrapper);
     MemoryAllocator::initialize();
     Scheduler::initialize();
+
 }
 
 //system calls handlers
 void timerHandler(uint64 sepc, uint64 sstatus){
     //trigger context switch or something
     printType("TIMER SIGNAL");
-    writeSepc(sepc);
-    writeSstatus(sstatus);
+    Riscv::writeSepc(sepc);
+    Riscv::writeSstatus(sstatus);
 }
 
 void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3, uint64 a4){
@@ -65,12 +60,12 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3, uint64 a4){
     switch (opCode) {
         case 0x01: //mem_alloc
             retValue = (uint64)MemoryAllocator::mem_allocate(arg1);
-            writeA0(retValue);
+            Riscv::writeA0(retValue);
             break;
 
         case 0x02: //mem_free
             retValue = (uint64)MemoryAllocator::mem_free((void*)arg1);
-            writeA0(retValue);
+            Riscv::writeA0(retValue);
             break;
 
         case 0x11: //thread_create
@@ -79,7 +74,7 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3, uint64 a4){
             *((uint64*)retValue) = (uint64)ts;
             Scheduler::put(ts);
 
-            writeA0(0);
+            Riscv::writeA0(0);
             break;
 
         case 0x12:
@@ -117,25 +112,25 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3, uint64 a4){
             break;
         case 0x50:
             printf("User called an Exception,\nMessage: %s\n\n", (const char*)(a1));
-            stopEmulator();
+            Riscv::stopEmulator();
             break;
         default: //some random code, that should be handler as error
             //this is error case, because no other case should go here, print something
             printf("OS DETECTED ERROR: Unhandled opCode value for system call: '%u'\n", opCode);
-            stopEmulator();
+            Riscv::stopEmulator();
             break;
     };
 }
 
 void ecallHandler(){
-    uint64 a0 = readA0();
-    uint64 a1 = readA1();
-    uint64 a2 = readA2();
-    uint64 a3 = readA3();
-    uint64 a4 = readA4();
-    uint64 scause = readScause();
-    uint64 sepc = readSepc()+4;
-    uint64 sstatus = readSstatus();
+    uint64 a0 = Riscv::readA0();
+    uint64 a1 = Riscv::readA1();
+    uint64 a2 = Riscv::readA2();
+    uint64 a3 = Riscv::readA3();
+    uint64 a4 = Riscv::readA4();
+    uint64 scause = Riscv::readScause();
+    uint64 sepc = Riscv::readSepc()+4;
+    uint64 sstatus = Riscv::readSstatus();
 
     switch (scause) {
         case 0x8000000000000001UL:
@@ -146,24 +141,23 @@ void ecallHandler(){
             break;
         case 0x0000000000000002UL:
             printType("OS DETECTED ERROR: Illegal instruction\n");
-            stopEmulator();
+            Riscv::stopEmulator();
             break;
         case 0x0000000000000005UL:
             printType("OS DETECTED ERROR: reading from forbidden address\n");
-            stopEmulator();
+            Riscv::stopEmulator();
             break;
         case 0x0000000000000007UL:
             printType("OS DETECTED ERROR: writing to forbidden address\n");
-            stopEmulator();
+            Riscv::stopEmulator();
             break;
         default:
             //this is error case, because no other case should go here, print something
             printf("OS DETECTED ERROR: Unhandled scause value: '%u'\n", scause);
-            stopEmulator();
+            Riscv::stopEmulator();
             break;
     }
 
-    writeSepc(sepc);
-    writeSstatus(sstatus);
-    return;
+    Riscv::writeSepc(sepc);
+    Riscv::writeSstatus(sstatus);
 }

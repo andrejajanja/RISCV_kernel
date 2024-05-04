@@ -17,7 +17,7 @@ void* mem_alloc(uint64 size){
         "li a0, 0x01;"
         "ecall;" : : "r"(size));
 
-    uint64 value = readA0();
+    uint64 value = Riscv::readA0();
     return (void*)value;
 }
 
@@ -27,7 +27,7 @@ int mem_free(void* pointer){
     asm("mv a1, %0;"
         "li a0, 0x02;"
         "ecall;": : "r"(pointer));
-    uint64 value = readA0();
+    uint64 value = Riscv::readA0();
     return (int)value;
 }
 
@@ -37,13 +37,13 @@ int thread_create(thread_t* handle, void(*start_routine)(void*), void* arg){
         "mv a3, %0;"
         "li a0, 0x11;"
         "ecall;": : "r"(arg), "r"(start_routine), "r"(handle));
-    uint64 value = readA0();
+    uint64 value = Riscv::readA0();
     return (int)value;
 }
 
 int thread_exit(){
     asm("li a0, 0x12;"
         "ecall;");
-    uint64 value = readA0();
+    uint64 value = Riscv::readA0();
     return (int)value;
 }

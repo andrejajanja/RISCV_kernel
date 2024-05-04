@@ -4,6 +4,7 @@
 #include "../h/riscv.hpp"
 #include "../h/syscall_c.hpp"
 #include "../h/sys_list.hpp"
+#include "../h/scheduler.hpp"
 
 //class Tacka{
 //private:
@@ -29,13 +30,10 @@ void userMain(void*){
 }
 
 int main(){
-    initializeSystem();
-
+    Riscv::initializeSystem();
     thread_t mainThread;
-    printSystemState(true, true, false);
     thread_create(&mainThread, &userMain, nullptr);
-    printSystemState(true, true, false);
-    thread_exit();
-    stopEmulator();
+    PCB::running = mainThread;
+    Riscv::stopEmulator();
     return 0;
 }

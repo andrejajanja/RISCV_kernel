@@ -26,7 +26,7 @@ public:
     static ThreadState* createState(void* start_routine, void* arg, void* stack_ptr);
     static void yield(PCB* t1, PCB* t2);
 
-    static ThreadState* running;
+    static thread_t* running;
 
     static void setJmp(jmpbuf buffer);
     static void longJmp(jmpbuf buffer, int st);
