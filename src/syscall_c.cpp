@@ -32,11 +32,11 @@ int mem_free(void* pointer){
 }
 
 int thread_create(thread_t* handle, void(*start_routine)(void*), void* arg){
-    asm("mv a1, %2;"
+    asm("mv a3, %2;"
         "mv a2, %1;"
-        "mv a3, %0;"
+        "mv a1, %0;"
         "li a0, 0x11;"
-        "ecall;": : "r"(arg), "r"(start_routine), "r"(handle));
+        "ecall": : "r"(handle), "r"(start_routine), "r"(arg));
     uint64 value = Riscv::readA0();
     return (int)value;
 }

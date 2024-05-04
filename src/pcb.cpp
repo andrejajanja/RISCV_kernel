@@ -6,46 +6,47 @@
 #include "../h/mem.hpp"
 #include "../h/riscv.hpp"
 
-// register name macros, for more ergonomic access
-#define A0 0
-#define SP 27
-#define RA 28
-#define GP 29
-#define TP 30
-#define PC 31
+thread_t PCB::running = nullptr;
 
-thread_t* PCB::running = nullptr;
-
-ThreadState* PCB::createState(void* start_routine, void* arg, void* stack_ptr){
+ThreadState* PCB::createState(void* start_routine, void* arg){
+    //this returns number of segments it takes to store ThreadState structure
     size_t size = calculateSize<ThreadState>();
-    auto ptr = (ThreadState*)MemoryAllocator::mem_allocate(size + DEFAULT_STACK_SIZE);
-    if(ptr == nullptr){
-        sysCallExcepiton("Failed to allocate space for ThreadState data stucture.");
+
+    //ERROR DETECTED HERE:
+    // - STACK GROWS TOWARDS LOWER ADDRESSES !!!
+    // - mem_allocate argument is size in segments, not BYTES.
+    auto allocatedSpace = MemoryAllocator::mem_allocate(size + DEFAULT_STACK_SIZE / MEM_BLOCK_SIZE);
+    if(allocatedSpace == nullptr){
+        sysCallExcepiton("Failed to allocate space for ThreadState data structure.");
+        return nullptr;
+    }else{
+        auto ptr = (ThreadState*)((uint64)allocatedSpace + DEFAULT_STACK_SIZE);
+        ptr->stackEnd = allocatedSpace;
+        ptr->stackBegin = (void*)ptr;
+        ptr->funcArgs = arg;
+
+        //setting all register value to 0
+        for (int i = 0; i < 27; i++) {
+            ptr->registers[i] = 0;
+        }
+
+        ptr->registers[SP] = (uint64)ptr;
+        //FIXME check if this is adequate value for RA register
+        ptr->registers[RA] = (uint64)nullptr;
+        ptr->registers[PC] = (uint64)start_routine;
+
+        return ptr;
     }
-    ptr->st_p = (void*)((size_t)ptr + size);
-    ptr->arg_ptr = arg;
-    for (int i = 1; i < 27; i++) {
-        ptr->registers[i] = 0;
-    }
-    ptr->registers[A0] = (uint64)arg;
-    //TODO check if this works as it should (optimization for stack pointer)
-    ptr->registers[SP] = (uint64)ptr+size;
-    ptr->registers[RA] = (uint64)nullptr;
-    ptr->registers[PC] = (uint64)start_routine;
-    return ptr;
 }
 
 //TODO implement setjump
-void PCB::setJmp(jmpbuf buffer) {
-    return;
-}
-
-//TODO implement longjump
-void PCB::longJmp(jmpbuf buffer, int st) {
-    return;
+bool PCB::setJmp(ThreadState* state) {
+    return (bool)Riscv::readA0();
 }
 
 //TODO implement yield
-void PCB::yield(PCB *t1, PCB *t2) {
-    return;
+void PCB::yield(thread_t oldT, thread_t newT) {
+    if(setJmp(oldT) == 0){
+        longJmp(newT);
+    }
 }

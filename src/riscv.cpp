@@ -51,10 +51,10 @@ void timerHandler(uint64 sepc, uint64 sstatus){
     Riscv::writeSstatus(sstatus);
 }
 
-void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3, uint64 a4){
+void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
     uint64 opCode = a0; uint64 arg1 = a1;
     uint64 arg2 = a2; uint64 arg3 = a3;
-    uint64 arg4 = a4; uint64 retValue;
+    uint64 retValue;
     ThreadState* ts;
 
     switch (opCode) {
@@ -70,7 +70,7 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3, uint64 a4){
 
         case 0x11: //thread_create
             retValue = arg1;
-            ts = PCB::createState((void*)arg2, (void*)arg3, (void*)arg4);
+            ts = PCB::createState((void*)arg2, (void*)arg3);
             *((uint64*)retValue) = (uint64)ts;
             Scheduler::put(ts);
 
@@ -127,7 +127,6 @@ void ecallHandler(){
     uint64 a1 = Riscv::readA1();
     uint64 a2 = Riscv::readA2();
     uint64 a3 = Riscv::readA3();
-    uint64 a4 = Riscv::readA4();
     uint64 scause = Riscv::readScause();
     uint64 sepc = Riscv::readSepc()+4;
     uint64 sstatus = Riscv::readSstatus();
@@ -137,7 +136,7 @@ void ecallHandler(){
             timerHandler(sepc, sstatus);
             break;
         case 0x0000000000000008UL | 0x0000000000000009UL:
-            systemCallHandler(a0, a1, a2, a3, a4);
+            systemCallHandler(a0, a1, a2, a3);
             break;
         case 0x0000000000000002UL:
             printType("OS DETECTED ERROR: Illegal instruction\n");

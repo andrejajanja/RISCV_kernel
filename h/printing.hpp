@@ -15,8 +15,6 @@ void printType(int number);
 
 void printType(uint64 number);
 
-void printType(uint64 number);
-
 void printType(bool cond);
 
 //printf - implemented to work in the same way as printf from stdio.h

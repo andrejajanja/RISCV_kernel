@@ -60,8 +60,6 @@ void printType(uint64 number){
         __putc((char)(48+digits[digitNum]));
         digitNum--;
     }
-
-    return;
 }
 
 void printType(bool cond){
@@ -84,12 +82,20 @@ void printf(const char* str, ...){
     //... are registers a1 to a7
     uint8 arg_cnt = 0;
     //FIXME find a way to put all these arguments on the stack, insted of like this, it looks ugly.
-    uint64 arg_val[7] = {readA1(),readA2(),readA3(),readA4(),readA5(),readA6(),readA7()};
+    uint64 arg_val[7] = {
+            Riscv::readA1(),
+            Riscv::readA2(),
+            Riscv::readA3(),
+            Riscv::readA4(),
+            Riscv::readA5(),
+            Riscv::readA6(),
+            Riscv::readA7()
+    };
     while(*str != '\0'){
         if(*str == '%'){
             if(arg_cnt == 7){
                 printType("PRINTF ERROR: too many formaters provided for printf");
-                stopEmulator();
+                Riscv::stopEmulator();
             }
             str++;
             switch (*str) {
@@ -110,7 +116,7 @@ void printf(const char* str, ...){
                     break;
                 default:
                     printType("\nPRINTF ERROR: invalid formating letter in printf.\n");
-                    stopEmulator();
+                    Riscv::stopEmulator();
             }
             arg_cnt++;
         }else{

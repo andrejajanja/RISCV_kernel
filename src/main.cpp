@@ -3,37 +3,27 @@
 //
 #include "../h/riscv.hpp"
 #include "../h/syscall_c.hpp"
-#include "../h/sys_list.hpp"
-#include "../h/scheduler.hpp"
-
-//class Tacka{
-//private:
-//    int x, y;
-//public:
-//    Tacka(int x, int y): x(x), y(y){}
-//    void print(){
-//        printf("Tacka: (%d, %d)\n", x, y);
-//    }
-//};
-//
-//void writeX(void* x){
-//    *((int*)(x)) = 10;
-//}
+#include "../h/printing.hpp"
 
 void userMain(void*){
-    printf("Ovo je main fja koja se izvrsila.");
-
-//    thread_t t1;
-//    int x = 10;
-//    thread_create(&t1, &writeX, &x);
-    return;
+    printf("Some text here\n");
 }
 
 int main(){
     Riscv::initializeSystem();
-    thread_t mainThread;
-    thread_create(&mainThread, &userMain, nullptr);
-    PCB::running = mainThread;
+
+    //create thread context for main function
+    thread_create(&PCB::running, &userMain, nullptr);
+    //prepair stack for userMain function
+    uint64 temp;
+    asm("la %0, endOfMainLabel;": "=r"(temp));
+    PCB::running->registers[RA] = temp;
+    PCB::longJmp(PCB::running);
+    //TODO this is where you need to jump when ALL threads are finnished this is in dispatch function
+    asm("endOfMainLabel:");
+    printf("This is the end of main function");
     Riscv::stopEmulator();
     return 0;
 }
+
+//mainThread->registers[RA] =
