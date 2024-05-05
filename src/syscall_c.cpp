@@ -44,6 +44,12 @@ int thread_create(thread_t* handle, void(*start_routine)(void*), void* arg){
 int thread_exit(){
     asm("li a0, 0x12;"
         "ecall;");
-    uint64 value = Riscv::readA0();
-    return (int)value;
+    return (int)Riscv::readA0();
+}
+
+int thread_dispatch(){
+    asm("mv a1, ra;"
+        "li a0, 0x13;");
+    asm("ecall;");
+    return (int)Riscv::readA0();
 }

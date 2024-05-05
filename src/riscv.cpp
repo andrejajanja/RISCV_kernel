@@ -77,11 +77,11 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
             Riscv::writeA0(0);
             break;
 
-        case 0x12:
-            printf("Started exit from running thread: %u\n", (uint64)PCB::running);
+        case 0x12: //thread_exit
+            PCB::threadCompleteProcedure();
             break;
-        case 0x13:
-            printf("Usao sam u thread dispatch\n");
+        case 0x13: //thread_dispatch
+            PCB::dispatch_sync();
             break;
         case 0x21:
             printf("Usao sam u sem_open\n");

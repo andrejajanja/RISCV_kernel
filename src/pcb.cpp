@@ -31,22 +31,25 @@ ThreadState* PCB::createState(void* start_routine, void* arg){
         }
 
         ptr->registers[SP] = (uint64)ptr;
-        //FIXME check if this is adequate value for RA register
-        ptr->registers[RA] = (uint64)nullptr;
+        ptr->registers[RA] = (uint64) &PCB::threadCompleteProcedure;
         ptr->registers[PC] = (uint64)start_routine;
 
         return ptr;
     }
 }
 
-//TODO implement setjump
-bool PCB::setJmp(ThreadState* state) {
-    return (bool)Riscv::readA0();
-}
-
-//TODO implement yield
 void PCB::yield(thread_t oldT, thread_t newT) {
     if(setJmp(oldT) == 0){
         longJmp(newT);
     }
+}
+
+void PCB::dispatch_sync() {
+    yield(PCB::running, PCB::running);
+}
+
+void PCB::threadCompleteProcedure() {
+    //TODO implement cleanup for the thread memory and update scheduler structure
+    printf("\n -- Thread ended --");
+    Riscv::stopEmulator();
 }

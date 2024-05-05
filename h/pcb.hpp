@@ -15,6 +15,7 @@
 struct ThreadState;
 typedef ThreadState* thread_t;
 
+//TODO optimize this to take less memory, not all registers and variables are needed
 struct ThreadState{
     void* stackEnd; //pointer to the end thread stack
     void* stackBegin; //pointer to the end of allocated space for thread stack
@@ -24,6 +25,7 @@ struct ThreadState{
     size_t registers[30];
     size_t timeLeft;
     void* funcArgs;
+    bool isStarted;
 };
 
 class PCB {
@@ -35,6 +37,9 @@ public:
 
     static bool setJmp(thread_t state);
     static void longJmp(thread_t state);
+    static void dispatch_sync();
+    static void threadCompleteProcedure();
+    static void threadStart(ThreadState* state);
 };
 
 #endif //RISCV_KERNEL_PCB_H
