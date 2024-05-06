@@ -130,7 +130,7 @@ void List<T>::remove(short index){
 
 template <typename T>
 void List<T>::removeFront(){
-    if(count == 0) return;
+    if(count == 0) Exception("Can't remove element from an empty list.");
 
     if(count == 1){
         delete listHead;
@@ -147,7 +147,7 @@ void List<T>::removeFront(){
 
 template <typename T>
 void List<T>::removeBack(){
-    if(count == 0) return;
+    if(count == 0) Exception("Can't remove element from an empty list.");
 
     if(count == 1){
         delete listHead;
@@ -162,25 +162,23 @@ void List<T>::removeBack(){
     count--;
 }
 
-//FIXME next and previous will have undefined behaviour on empty list
 template <typename T>
 T List<T>::next() {
-//    if(count == 0){
-//        Exception("There is no next element i")
-//        return;
-//    }
+    if(count == 0) Exception("No next element in empty list");
     if(count == 1){
         return listHead->data;
     }else{
+        lastElem = lastElem->right;
         T data = lastElem->data;
         (lastIndex == count-1)? lastIndex=0: lastIndex++;
-        lastElem = lastElem->right;
+
         return data;
     }
 }
 
 template <typename T>
 T List<T>::previous(){
+    if(count == 0) Exception("No previous element in empty list");
     if(count == 1){
         return listHead->data;
     }else{
@@ -194,7 +192,7 @@ T List<T>::previous(){
 //TODO optimize - index
 template <typename T>
 T List<T>::operator[](short index){
-    //FIXME this indexing won't work if list has no elements
+    if(count == 0) Exception("Empty list can't be indexed");
 
     if(index == 0){
         return listHead->data;

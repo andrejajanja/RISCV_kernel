@@ -23,7 +23,10 @@ void Scheduler::remove(ThreadState *ts) {
 }
 
 void Scheduler::printThreads(){
-    printf("N-threads: %d", pool->getCount());
+    printf("%d threads:\n", pool->getCount());
+    for(Iterator<ThreadState*> iter = pool->getIterator(); iter.hasElements(); ++iter){
+        printf("Fun_addr: %u\n", (*iter)->registers[29]);
+    }
 }
 
 void Scheduler::removeRunning(){

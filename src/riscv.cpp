@@ -9,8 +9,6 @@
 #include "../h/scheduler.hpp"
 #include "../h/syscall_cpp.hpp"
 
-uint16 numberOfSystemPrint = 1;
-
 void Riscv::stopEmulator(){
     printf("\n\t-- Shutting down --\n");
     //defined in project file
@@ -19,6 +17,7 @@ void Riscv::stopEmulator(){
         "sw t1, 0(t0);");
 }
 
+uint16 numberOfSystemPrint = 1;
 void printSystemState(bool memmory, bool threads, bool semaphores){
     printf("\n-- %u. System state (data structures) --\n", numberOfSystemPrint);
     numberOfSystemPrint++;
@@ -40,7 +39,6 @@ void Riscv::initializeSystem(){
     Riscv::writeStvec((uint64)&ecallWrapper);
     MemoryAllocator::initialize();
     Scheduler::initialize();
-
 }
 
 void Riscv::shotdownSystem() {
@@ -79,16 +77,17 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
             ts = PCB::createState((void*)arg2, (void*)arg3);
             *((uint64*)retValue) = (uint64)ts;
             Scheduler::put(ts);
-
             Riscv::writeA0(0);
             break;
 
         case 0x12: //thread_exit
-            PCB::threadCompleteProcedure();
+            PCB::threadComplete();
             break;
+
         case 0x13: //thread_dispatch
             PCB::dispatch_sync();
             break;
+
         case 0x21:
             printf("Usao sam u sem_open\n");
             break;

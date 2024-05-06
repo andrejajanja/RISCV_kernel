@@ -44,7 +44,6 @@ public:
     void appendBack(T data);
     void insert(T data, short index = 0);
 
-    //FIXME All remove methods have no effect when count = 0
     void remove(short index);
     void removeFront();
     void removeBack();
