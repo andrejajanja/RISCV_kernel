@@ -8,7 +8,6 @@
 void userMain(void*){
     printf("-- 1 --\n");
     thread_dispatch();
-    thread_exit();
     printf("-- 2 --\n");
     thread_dispatch();
     printf("-- 3 --\n");
@@ -23,8 +22,8 @@ int main(){
     asm(".global endOfProgramLabel;"
         "endOfProgramLabel:");
     //TODO do memory cleanup here
-    printf("This is the end of main function");
-    Riscv::stopEmulator();
+    printf("  -- Program ended, cleaning up --");
+    Riscv::shotdownSystem();
     return 0;
 }
 

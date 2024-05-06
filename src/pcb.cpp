@@ -5,6 +5,7 @@
 #include "../h/pcb.hpp"
 #include "../h/mem.hpp"
 #include "../h/riscv.hpp"
+#include "../h/scheduler.hpp"
 
 thread_t PCB::running = nullptr;
 
@@ -22,20 +23,21 @@ ThreadState* PCB::createState(void* start_routine, void* arg){
     }else{
         auto ptr = (ThreadState*)((uint64)allocatedSpace + DEFAULT_STACK_SIZE);
         ptr->stackEnd = allocatedSpace;
-        ptr->stackBegin = (void*)ptr;
         ptr->funcArgs = arg;
 
         //setting all register value to 0
-        for (int i = 0; i < 27; i++) {
-            ptr->registers[i] = 0;
-        }
+        for (int i = 0; i < 27; i++) ptr->registers[i] = 0;
 
         ptr->registers[SP] = (uint64)ptr;
         ptr->registers[RA] = (uint64) &PCB::threadCompleteProcedure;
         ptr->registers[PC] = (uint64)start_routine;
-
         return ptr;
     }
+}
+
+//TODO CHECK IF THIS FREETHREAD METHOD WORKS
+void PCB::freeThread(ThreadState* state){
+    MemoryAllocator::mem_free(state->stackEnd);
 }
 
 void PCB::yield(thread_t oldT, thread_t newT) {
@@ -50,6 +52,11 @@ void PCB::dispatch_sync() {
 
 void PCB::threadCompleteProcedure() {
     //TODO implement cleanup for the thread memory and update scheduler structure
-    printf("\n -- Thread ended --");
-    Riscv::stopEmulator();
+    if(Scheduler::threadCount() == 1){
+        asm("la t0, endOfProgramLabel;"
+            "jalr x0, t0;");
+    }
+    Scheduler::removeRunning();
+    PCB::running = Scheduler::get();
+    longJmp(PCB::running);
 }

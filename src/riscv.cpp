@@ -43,6 +43,12 @@ void Riscv::initializeSystem(){
 
 }
 
+void Riscv::shotdownSystem() {
+    Scheduler::cleanUp();
+    //TODO memory allocator cleanup
+    stopEmulator();
+}
+
 //system calls handlers
 void timerHandler(uint64 sepc, uint64 sstatus){
     //trigger context switch or something

@@ -107,6 +107,7 @@ public:
 
     static void stopEmulator();
     static void initializeSystem();
+    static void shotdownSystem();
 };
 
 //system initialization and infrastructure functions

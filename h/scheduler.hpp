@@ -15,6 +15,13 @@ public:
     static ThreadState* get();
     static void remove(ThreadState* ts);
     static void printThreads();
+    static void removeRunning();
+    inline static uint16 threadCount(){
+        return pool->getCount();
+    }
+    inline static void cleanUp(){
+        delete pool;
+    }
 private:
     static SysList<ThreadState*>* pool;
 };

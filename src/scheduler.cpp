@@ -4,7 +4,6 @@
 
 #include "../h/scheduler.hpp"
 
-
 SysList<ThreadState*>* Scheduler::pool;
 
 void Scheduler::initialize() {
@@ -12,10 +11,7 @@ void Scheduler::initialize() {
 }
 
 void Scheduler::put(ThreadState *ts) {
-    pool->appendBack(ts);
-    if(pool->getCount() == 1){
-        PCB::running = ts;
-    }
+    pool->insertBeforeLast(ts);
 }
 
 ThreadState* Scheduler::get() {
@@ -28,4 +24,9 @@ void Scheduler::remove(ThreadState *ts) {
 
 void Scheduler::printThreads(){
     printf("N-threads: %d", pool->getCount());
+}
+
+void Scheduler::removeRunning(){
+    ThreadState* tsTemp = pool->removeLast();
+    PCB::freeThread(tsTemp);
 }
