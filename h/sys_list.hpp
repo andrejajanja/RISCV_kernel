@@ -43,13 +43,16 @@ void destructElement(Element<T>* ptr){
 template <typename T>
 class Iterator{
 public:
-    Iterator(Element<T>* beginning, short size): temp(beginning), size(size) {}
+    Iterator(Element<T>* beginning, short size): temp(beginning), next(beginning->right), size(size) {}
 
     bool hasElements() const {
         return elemIndex != size;
     }
+
+    //TODO check if this works
     inline void operator++() {
-        temp = temp->right;
+        temp = next;
+        next = temp->right;
         elemIndex++;
     }
 
@@ -58,6 +61,7 @@ public:
     }
 private:
     Element<T>* temp;
+    Element<T>* next;
     short elemIndex;
     short size;
 };

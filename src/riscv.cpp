@@ -62,14 +62,23 @@ size_t timerNum = 0;
 
 //system calls handlers
 void timerHandler(){
-    //printf("TS %u\n", timerNum++);
-    PCB::dispatch_async();
+//    printf("TS %u\n", timerNum++); //optional print
+
+    //async dispatch
+    Scheduler::decrementSleeping();
+    PCB::running->timeLeft--;
+    if(PCB::running->timeLeft == 0){
+        ThreadState* oldT = PCB::running;
+        PCB::running = Scheduler::get();
+        PCB::running->timeLeft = DEFAULT_TIME_SLICE;
+        if(oldT == PCB::running) return;
+        PCB::yield(oldT, PCB::running);
+    }
 }
 
-void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
-    uint64 opCode = a0; uint64 arg1 = a1;
-    uint64 arg2 = a2; uint64 arg3 = a3;
-    uint64 retValue;
+void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
+    uint64 arg1 = a1; uint64 arg2 = a2; //FIXME do I even need to hold these here
+    uint64 arg3 = a3; uint64 retValue;
     ThreadState* ts;
 
     switch (opCode) {
@@ -117,19 +126,25 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
         case 0x26:
             printf("Usao sam u sem_trywait\n");
             break;
+
         case 0x31:
-            printf("Usao sam u thread_sleep\n");
+            PCB::running->waitingFor = a1;
+            Scheduler::putToSleep(PCB::running);
+            PCB::dispatch_sync();
             break;
+
         case 0x41:
             printf("Usao sam u getc\n");
             break;
         case 0x42:
             printf("Usao sam u putc\n");
             break;
+
         case 0x50:
             printf("User called an Exception,\nMessage: %s\n\n", (const char*)(a1));
             Riscv::stopEmulator();
             break;
+
         default: //some random code, that should be handler as error
             //this is error case, because no other case should go here, print something
             printf("OS DETECTED ERROR: Unhandled opCode value for system call: '%u'\n", opCode);

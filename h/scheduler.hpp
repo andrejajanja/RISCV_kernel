@@ -12,24 +12,22 @@
 class Scheduler {
 public:
     static void initialize();
-    inline static void cleanUp(){
-        delete pool;
-    }
+    static void cleanUp();
+    static void printThreads();
+    static uint16 threadCount();
 
     static void put(ThreadState* ts);
     static ThreadState* get();
 
     static void remove(ThreadState* ts);
-    static void printThreads();
     static void removeRunning();
-    //TODO move inline definitions to cpp file
-    inline static uint16 threadCount(){
-        return pool->getCount();
-    }
+
+    static void putToSleep(ThreadState* ts);
+    static void decrementSleeping();
 
 private:
     static SysList<ThreadState*>* pool;
-    static SysList<ThreadState*>* blocked;
+    static SysList<ThreadState*>* sleeping;
 };
 
 

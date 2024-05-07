@@ -44,14 +44,6 @@ void PCB::dispatch_sync() {
     yield(oldT, PCB::running);
 }
 
-//TODO Implement thread blocking with blocked queue
-void PCB::dispatch_async() {
-    ThreadState* oldT = PCB::running;
-    PCB::running = Scheduler::get();
-    if(oldT == PCB::running) return;
-    yield(oldT, PCB::running);
-}
-
 void PCB::yield(ThreadState* oldT, ThreadState* newT) {
     if(setJmp(oldT) == 0){
         if(newT->isStarted){

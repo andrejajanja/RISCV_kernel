@@ -36,7 +36,6 @@ public:
     static void longJmp(ThreadState* state);
 
     static void dispatch_sync();
-    static void dispatch_async();
     static void yield(ThreadState* oldT, ThreadState* newT);
 
     //isRunning = true, jump to User mode, threadStart
