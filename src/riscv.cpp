@@ -51,6 +51,7 @@ void Riscv::shotdownSystem() {
 void timerHandler(uint64 sepc, uint64 sstatus){
     //trigger context switch or something
     printType("TIMER SIGNAL");
+    Riscv::stopEmulator();
     Riscv::writeSepc(sepc);
     Riscv::writeSstatus(sstatus);
 }

@@ -22,12 +22,14 @@ ThreadState* PCB::createState(void* start_routine, void* arg){
         return nullptr;
     }else{
         auto ptr = (ThreadState*)((uint64)spacePointer + DEFAULT_STACK_SIZE);
-        //setting all register value to 0
         ptr->registers[0] = (size_t)arg;
-        for (int i = 1; i < 20; i++) ptr->registers[i] = 0;
         ptr->registers[SP] = (uint64)ptr;
         ptr->registers[RA] = (uint64) &PCB::threadComplete;
         ptr->registers[PC] = (uint64)start_routine;
+        //TODO check if this is the valid initial system context
+        ptr->registers[SEPC] = Riscv::readSepc();
+        ptr->registers[SSTATUS] = Riscv::readSstatus();
+        ptr->registers[SCAUSE] = Riscv::readScause();
         ptr->stackEnd = spacePointer;
         ptr->timeLeft = DEFAULT_TIME_SLICE;
         ptr->isStarted = false;
@@ -40,9 +42,9 @@ void PCB::freeThread(ThreadState* state){
 }
 
 //FIXME yield doesn't jump back to the appropriate state of the thread
-void PCB::yield(ThreadState* oldT, ThreadState* newT, bool newStarted) {
+void PCB::yield(ThreadState* oldT, ThreadState* newT) {
     if(setJmp(oldT) == 0){
-        if(newStarted){
+        if(newT->isStarted){
             longJmp(newT);
         }else{
             newT->isStarted = true;
@@ -55,12 +57,11 @@ void PCB::dispatch_sync() {
     ThreadState* oldT = PCB::running;
     PCB::running = Scheduler::get();
     if(oldT == PCB::running) return;
-    yield(oldT, PCB::running, PCB::running->isStarted);
+    yield(oldT, PCB::running);
 }
 
 void PCB::threadComplete() {
     Scheduler::removeRunning();
-    printf("Removed running.\n");
 
     if(Scheduler::threadCount() == 0){
         asm("la t0, endOfProgramLabel;"

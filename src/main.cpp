@@ -8,11 +8,13 @@ asm(".global endOfProgramLabel;");
 
 void addNumber(void* num){
     auto nump = (size_t*)num;
-    nump[0]++;
+    size_t id = ++nump[0];
     size_t sec = nump[2];
     nump[2] += nump[1];
     nump[1] = sec;
-    printf("Thread %u, Sum: %u\n", nump[0], nump[2]);
+    printf("Thread %u, Sum: %u\n", id, nump[2]);
+    thread_dispatch();
+    printf("Thread %u ended\n", id);
 }
 
 void userMain(void*){
@@ -26,13 +28,14 @@ void userMain(void*){
         thread_create(&ths[i], &addNumber, number);
     }
     thread_dispatch();
-    printf("Main ended.\n");
+    printf("Main end.\n");
 }
 
 int main(){
     Riscv::initializeSystem();
-    // - create thread context for main function
+    // - create thread context for main function and start it
     thread_create(&PCB::running, &userMain, nullptr);
+    PCB::running->isStarted = true; //forgot this for userMain thread, ended up in infinite loop
     PCB::threadStart(PCB::running);
 
     asm("endOfProgramLabel:");
