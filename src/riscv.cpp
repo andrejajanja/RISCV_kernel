@@ -36,24 +36,34 @@ void sysCallExcepiton(const char* msg){
 }
 
 void Riscv::initializeSystem(){
-    Riscv::writeStvec((uint64)&ecallWrapper);
+    writeStvec((uint64)&ecallWrapper);
     MemoryAllocator::initialize();
     Scheduler::initialize();
+
+}
+void Riscv::switchToUserMode(){
+    asm("li t0, 0;"
+        "csrw sstatus, t0;"
+        "csrw sip, t0;" //SIP = 0 for marking software interrupt resolved
+        "li t0, 2;"
+        "csrw sie, t0;" //SIE = 2 for allowing only software interrupts
+        "mv t0, ra;"
+        "csrw sepc, t0;"
+        "sret;");
 }
 
-void Riscv::shotdownSystem() {
+void Riscv::shutdownSystem() {
     Scheduler::cleanUp();
     //TODO memory allocator cleanup
     stopEmulator();
 }
 
+size_t timerNum = 0;
+
 //system calls handlers
-void timerHandler(uint64 sepc, uint64 sstatus){
-    //trigger context switch or something
-    printType("TIMER SIGNAL");
-    Riscv::stopEmulator();
-    Riscv::writeSepc(sepc);
-    Riscv::writeSstatus(sstatus);
+void timerHandler(){
+    //printf("TS %u\n", timerNum++);
+    PCB::dispatch_async();
 }
 
 void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
@@ -108,7 +118,7 @@ void systemCallHandler(uint64 a0, uint64 a1, uint64 a2, uint64 a3){
             printf("Usao sam u sem_trywait\n");
             break;
         case 0x31:
-            printf("Usao sam u time_sleep\n");
+            printf("Usao sam u thread_sleep\n");
             break;
         case 0x41:
             printf("Usao sam u getc\n");
@@ -139,9 +149,10 @@ void ecallHandler(){
 
     switch (scause) {
         case 0x8000000000000001UL:
-            timerHandler(sepc, sstatus);
+            timerHandler();
             break;
-        case 0x0000000000000008UL | 0x0000000000000009UL:
+        case 0x0000000000000008UL:
+        case 0x0000000000000009UL:
             systemCallHandler(a0, a1, a2, a3);
             break;
         case 0x0000000000000002UL:
@@ -155,6 +166,9 @@ void ecallHandler(){
         case 0x0000000000000007UL:
             printType("OS DETECTED ERROR: writing to forbidden address\n");
             Riscv::stopEmulator();
+            break;
+        case 0x8000000000000009UL:
+            printf("Hardware interrupt");
             break;
         default:
             //this is error case, because no other case should go here, print something

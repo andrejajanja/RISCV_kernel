@@ -105,17 +105,19 @@ public:
         asm("csrw sstatus, %0;": "=r"(value));
     }
 
+    static inline void writeScause(uint64 value){
+        asm("csrw scause, %0;": "=r"(value));
+    }
+    static void switchToUserMode();
     static void stopEmulator();
     static void initializeSystem();
-    static void shotdownSystem();
+    static void shutdownSystem();
 };
 
 //system initialization and infrastructure functions
 extern void ecallWrapper();
 void ecallHandler();
-
 void printSystemState(bool = false, bool = false, bool = false);
 void sysCallExcepiton(const char* msg);
-
 
 #endif //RISCV_KERNEL_RISCV_H

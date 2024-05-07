@@ -31,5 +31,5 @@ void Scheduler::printThreads(){
 
 void Scheduler::removeRunning(){
     ThreadState* tsTemp = pool->removeLast();
-    PCB::freeThread(tsTemp);
+    PCB::freeState(tsTemp);
 }

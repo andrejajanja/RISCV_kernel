@@ -5,8 +5,13 @@
 #ifndef RISCV_KERNEL_SEMAPHORE_H
 #define RISCV_KERNEL_SEMAPHORE_H
 
+struct SemaphoreState{
 
-class Semaphore {
+};
+
+typedef SemaphoreState* sem_t;
+
+class SEM {
 
 };
 

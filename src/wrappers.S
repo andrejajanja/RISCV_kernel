@@ -2,20 +2,23 @@
 .global _ZN3PCB6setJmpEP11ThreadState
 .global _ZN3PCB7longJmpEP11ThreadState
 .global _ZN3PCB11threadStartEP11ThreadState
+.global _ZN3PCB21threadCompleteSysCallEv
 
 .align 4
 .type _Z12ecallWrapperv, @function
 _Z12ecallWrapperv:
-    #save context to stack
+    #save user context to stack
     addi sp, sp, -256
-    .irp index, 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+    .irp index, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
     sd x\index, \index * 8(sp)
     .endr
 
     call _Z12ecallHandlerv
+    li t0, 0;
+    csrw sip, t0; #marking software interrupt resolved
 
     # pop all registers from stack
-    .irp index, 0,1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+    .irp index, 1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
     ld x\index, \index * 8(sp)
     .endr
     addi sp, sp, 256
@@ -117,13 +120,11 @@ _ZN3PCB11threadStartEP11ThreadState:
     ld sp,160(a0)
     ld ra,168(a0)
     ld t0,176(a0) #writing pc for function start
-    #initializing system context for thread
-    ld t1,184(a0)
-    csrw sepc,t1
-    ld t1,192(a0)
-    csrw sstatus,t1
-    ld t1, 200(a0)
-    csrw scause,t1
     ld a0,0(a0) #loading thread function argument void* arg
     #jumping to thread function
     jalr zero, t0
+
+.type _ZN3PCB21threadCompleteSysCallEv, @function
+_ZN3PCB21threadCompleteSysCallEv:
+    li a0, 0x12
+    ecall

@@ -6,41 +6,35 @@
 #include "../h/printing.hpp"
 asm(".global endOfProgramLabel;");
 
-void addNumber(void* num){
-    auto nump = (size_t*)num;
-    size_t id = ++nump[0];
-    size_t sec = nump[2];
-    nump[2] += nump[1];
-    nump[1] = sec;
-    printf("Thread %u, Sum: %u\n", id, nump[2]);
-    thread_dispatch();
-    printf("Thread %u ended\n", id);
+void calculateSum(void*){
+    size_t sum = 0;
+    for (int j = 0; j < 5; ++j) {
+        for (int i = 0; i < 10000000; ++i) {
+            size_t a = 10;
+            size_t b = 5;
+            sum += a/b + a + b;
+        }
+        printf("%d. pass completed.\n", j);
+    }
+    printf("Value %u.\n", sum);
 }
 
+
+#define tn 5
 void userMain(void*){
-    auto number = (size_t*)mem_alloc(4*sizeof(size_t));
-    number[0] = 0;
-    number[1] = 1;
-    number[2] = 1;
-    printf("Thread %u, Sum: %u\n", number[0], number[2]);
-    thread_t ths[3];
-    for (int i = 0; i < 3; i++) {
-        thread_create(&ths[i], &addNumber, number);
+    printf("Main start\n");
+    thread_t handles[tn];
+    for (int i = 0; i < tn; ++i) {
+        thread_create(&handles[i], &calculateSum, nullptr);
     }
-    thread_dispatch();
-    printf("Main end.\n");
 }
 
 int main(){
     Riscv::initializeSystem();
     // - create thread context for main function and start it
     thread_create(&PCB::running, &userMain, nullptr);
-    PCB::running->isStarted = true; //forgot this for userMain thread, ended up in infinite loop
-    PCB::threadStart(PCB::running);
-
+    PCB::threadBegin(PCB::running);
     asm("endOfProgramLabel:");
-    Riscv::shotdownSystem();
+    Riscv::shutdownSystem();
     return 0;
 }
-
-//mainThread->registers[RA] =
