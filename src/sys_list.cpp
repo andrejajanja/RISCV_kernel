@@ -6,11 +6,36 @@
 #include "../h/pcb.hpp"
 #include "../h/riscv.hpp"
 
+
+//SysIterator
+template <typename T>
+SysIterator<T>::SysIterator(SysListElement<T>* beginning, short size): temp(beginning), next(beginning->right), size(size), elemIndex(0) {}
+
+template <typename T>
+bool SysIterator<T>::hasElements() const {
+    return (elemIndex != size && size != 0);
+}
+
+template <typename T>
+void SysIterator<T>::operator++() {
+    temp = next;
+    next = temp->right;
+    elemIndex++;
+}
+
+template <typename T>
+T SysIterator<T>::operator*() const {
+    return temp->data;
+}
+
+
+
+//-- SysList --
 template<typename T>
 SysList<T>::~SysList(){
     if(count != 0){
-        Element<T>* prev;
-        Element<T>* temp = listHead;
+        SysListElement<T>* prev;
+        SysListElement<T>* temp = listHead;
         prev = temp;
         temp = temp->right;
         for (int i = 0; i < count; i++) {
@@ -21,10 +46,35 @@ SysList<T>::~SysList(){
     }
 }
 
+//- SysList element static methods -
+template<typename T>
+SysListElement<T>* SysList<T>::constructElement(){
+    size_t size = sizeof(SysListElement<T>);
+    size += sizeof(size_t); //this is to account for metadata for size of allocated segment
+    if(size < MEM_BLOCK_SIZE){ //recalculating size to be number of memory blocks, instead of bytes
+        size = 1;
+    }else{
+        size = size/MEM_BLOCK_SIZE+1;
+    }
+    auto temp = (SysListElement<T>*)MemoryAllocator::mem_allocate(size);
+    return temp;
+}
+
+template<typename T>
+SysListElement<T>* SysList<T>::constructElement(T data){
+    SysListElement<T>* temp = SysList<T>::constructElement();
+    temp->data = data;
+    return temp;
+}
+
+template<typename T>
+void SysList<T>::destructElement(SysListElement<T>* ptr){
+    MemoryAllocator::mem_free(ptr);
+}
+
 template<typename T>
 void SysList<T>::appendFront(T data) {
-    Element<T>* temp = constructElement<T>();
-    temp->data = data;
+    SysListElement<T>* temp = constructElement(data);
     if(count == 0){
         listHead = temp;
         listBack = temp;
@@ -41,7 +91,7 @@ void SysList<T>::appendFront(T data) {
 
 template<typename T>
 void SysList<T>::appendBack(T data) {
-    Element<T>* temp = constructElement(data);
+    SysListElement<T>* temp = constructElement(data);
     if(count == 0){
         listHead = temp;
         listHead = temp;
@@ -70,12 +120,12 @@ void SysList<T>::insert(T data, short index){
 
     checkIndex(index);
 
-    Element<T>* temp = this->listHead;
+    SysListElement<T>* temp = this->listHead;
     for (int i = 0; i < index; i++) {
         temp = temp->right;
     }
 
-    Element<T>* newElement = constructElement(data);
+    SysListElement<T>* newElement = constructElement(data);
 
     newElement->left = temp;
     if(temp->right == listBack){
@@ -91,7 +141,7 @@ void SysList<T>::insertBeforeLast(T data){
     if( count < 2 || lastElem == nullptr){
         appendFront(data);
     }else{
-        Element<T>* temp = constructElement(data);
+        SysListElement<T>* temp = constructElement(data);
         temp->left = lastElem->left;
         lastElem->left->right = temp;
         temp->right = lastElem;
@@ -113,7 +163,7 @@ void SysList<T>::removeFront(){
         listBack = nullptr;
         lastElem = nullptr;
     }else{
-        Element<T>* temp = listHead;
+        SysListElement<T>* temp = listHead;
         temp->right->left = listBack;
         listHead = temp->right;
         destructElement(temp);
@@ -131,7 +181,7 @@ void SysList<T>::removeBack(){
         listBack = nullptr;
         lastElem = nullptr;
     }else{
-        Element<T>* temp = listBack;
+        SysListElement<T>* temp = listBack;
         temp->left->right = listHead;
         listBack = temp->left;
         destructElement(temp);
@@ -163,7 +213,7 @@ T SysList<T>::removeLast(){
         return tempData;
     }
 
-    Element<T>* temp = lastElem;
+    SysListElement<T>* temp = lastElem;
     lastElem->left->right = lastElem->right;
     lastElem->right->left = lastElem->left;
     lastElem = lastElem->left;
@@ -188,7 +238,7 @@ T SysList<T>::previous() {
 template<typename T>
 void SysList<T>::remove(T data) {
     int index = -1;
-    Element<T>* temp = listHead;
+    SysListElement<T>* temp = listHead;
     for (int i = 0; i < count; i++) {
         if(temp->data == data){
             index = i;
@@ -196,7 +246,7 @@ void SysList<T>::remove(T data) {
         }
     }
 
-    if(index == -1) Exception("Element not in the list, can't remove");
+    if(index == -1) Exception("SysListElement not in the list, can't remove");
 
     if(index == 0){
         removeFront();
@@ -223,7 +273,7 @@ T SysList<T>::indexof(short index) {
 
     checkIndex(index);
 
-    Element<T>* temp = this->listHead;
+    SysListElement<T>* temp = this->listHead;
     for (int i = 0; i < index; i++) {
         temp = temp->right;
     }
@@ -249,7 +299,7 @@ T SysList<T>::next() {
 }
 
 template class SysList<ThreadState*>;
-template class Iterator<ThreadState*>;
+template class SysIterator<ThreadState*>;
 
 //template<typename T>
 //SysList<T>::

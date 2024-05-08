@@ -26,14 +26,14 @@ void Scheduler::printThreads(){
 
     if(pool->getCount() != 0){
         printf("- Pool -> %d ---\n", pool->getCount());
-        for(Iterator<ThreadState*> iter = pool->getIterator(); iter.hasElements(); ++iter){
+        for(SysIterator<ThreadState*> iter = pool->getIterator(); iter.hasElements(); ++iter){
             printf(" Addr: %u\n", (*iter)->registers[PC]);
         }
     }
 
     if(sleeping->getCount() != 0){
         printf("- Sleeping -> %d ---\n", sleeping->getCount());
-        for(Iterator<ThreadState*> iter = sleeping->getIterator(); iter.hasElements(); ++iter){
+        for(SysIterator<ThreadState*> iter = sleeping->getIterator(); iter.hasElements(); ++iter){
             printf(" Addr: %u\n", (*iter)->registers[PC]);
         }
     }
@@ -70,7 +70,7 @@ void Scheduler::putRunningToSleep(uint16 howLong) {
 
 void Scheduler::decrementSleeping() {
     if(sleeping->getCount() == 0) return;
-    for (Iterator<ThreadState*> iter = sleeping->getIterator(); iter.hasElements(); iter.operator++()) {
+    for (SysIterator<ThreadState*> iter = sleeping->getIterator(); iter.hasElements(); iter.operator++()) {
         ThreadState* temp = *iter;
         temp->waitingFor--;
         if(temp->waitingFor == 0){

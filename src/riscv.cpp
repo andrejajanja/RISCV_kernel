@@ -62,7 +62,6 @@ void timerHandler(){
 
     //async dispatch
     Scheduler::decrementSleeping();
-    //Scheduler::printThreads();
     if(Scheduler::hasOnlySleepingThreads()){
         Riscv::waitForNextTimer();
     }

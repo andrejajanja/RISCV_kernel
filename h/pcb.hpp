@@ -21,6 +21,8 @@ struct ThreadState{
     uint16 timeLeft;
     uint16 waitingFor;
     bool isStarted;
+
+
 };
 typedef ThreadState* thread_t;
 

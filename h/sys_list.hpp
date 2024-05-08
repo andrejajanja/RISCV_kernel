@@ -9,59 +9,23 @@
 #include "exception.hpp"
 
 template<typename T>
-struct Element{
+struct SysListElement{
     T data;
-    Element* left;
-    Element* right;
+    SysListElement* left;
+    SysListElement* right;
 };
 
-template<typename T>
-Element<T>* constructElement(){
-    size_t size = sizeof(Element<T>);
-    size += sizeof(size_t); //this is to account for metadata for size of allocated segment
-    if(size < MEM_BLOCK_SIZE){ //recalculating size to be number of memory blocks, instead of bytes
-        size = 1;
-    }else{
-        size = size/MEM_BLOCK_SIZE+1;
-    }
-    auto temp = (Element<T>*)MemoryAllocator::mem_allocate(size);
-    return temp;
-}
-
-template<typename T>
-Element<T>* constructElement(T data){
-    Element<T>* temp = constructElement<T>();
-    temp->data = data;
-    return temp;
-}
-
-template<typename T>
-void destructElement(Element<T>* ptr){
-    MemoryAllocator::mem_free(ptr);
-}
-
 template <typename T>
-class Iterator{
+class SysIterator{
 public:
-    Iterator(Element<T>* beginning, short size): temp(beginning), next(beginning->right), size(size), elemIndex(0) {}
+    SysIterator(SysListElement<T>* beginning, short size);
 
-    bool hasElements() const {
-        return (elemIndex != size && size != 0);
-    }
-
-    inline void operator++() {
-        //printf("ITERATOR: i = %u, lenght = %u\n")
-        temp = next;
-        next = temp->right;
-        elemIndex++;
-    }
-
-    inline T operator*() const {
-        return temp->data;
-    }
+    bool hasElements() const;
+    void operator++();
+    T operator*() const;
 private:
-    Element<T>* temp;
-    Element<T>* next;
+    SysListElement<T>* temp;
+    SysListElement<T>* next;
     uint16 size;
     uint16 elemIndex;
 };
@@ -72,6 +36,11 @@ public:
     SysList(): listHead(nullptr), listBack(nullptr), lastElem(nullptr), lastIndex(0), count(0) {}
 
     ~SysList();
+
+    //SysListElement static methods
+    static SysListElement<T> * constructElement();
+    static  SysListElement<T>* constructElement(T data);
+    static void destructElement(SysListElement<T>* ptr);
 
     void appendFront(T data);
     void appendBack(T data);
@@ -89,8 +58,8 @@ public:
 
     T indexof(short index);
 
-    inline Iterator<T> getIterator() const{
-        return Iterator<T>(this->listHead, this->count);
+    inline SysIterator<T> getIterator() const{
+        return SysIterator<T>(this->listHead, this->count);
     }
 
     inline short getCount() const{
@@ -103,9 +72,9 @@ private:
         if(index < 0 || index > this->count) Exception("List index out of range");
     }
 
-    Element<T>* listHead;
-    Element<T>* listBack;
-    Element<T>* lastElem;
+    SysListElement<T>* listHead;
+    SysListElement<T>* listBack;
+    SysListElement<T>* lastElem;
 
     short lastIndex; //index between 0 and 65634
     short count; //maximum of 65536 elements

@@ -242,7 +242,7 @@ template class List<short>;
 template class List<char>;
 template class List<const char*>;
 
-//Iterator class
+//SysIterator class
 template class Iterator<int>;
 template class Iterator<size_t>;
 template class Iterator<short>;

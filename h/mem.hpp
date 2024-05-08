@@ -2,7 +2,7 @@
 #define MEM_H
 
 #include "../lib/hw.h"
-#include "../h/printing.hpp"
+#include "printing.hpp"
 
 template<typename T>
 size_t calculateSize();

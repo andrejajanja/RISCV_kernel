@@ -5,7 +5,6 @@
 #ifndef RISCV_KERNEL_LIST_H
 #define RISCV_KERNEL_LIST_H
 
-#include "syscall_c.hpp"
 #include "exception.hpp"
 
 template <typename T>

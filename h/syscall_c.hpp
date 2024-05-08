@@ -1,7 +1,12 @@
 #ifndef SYSCALL_C_HPP
 #define SYSCALL_C_HPP
-#include "pcb.hpp"
-#include "sem.hpp"
+#include "../lib/hw.h"
+
+struct ThreadState;
+typedef ThreadState* thread_t;
+struct SemState;
+typedef SemState* sem_t;
+
 
 //memory allocator
 void* mem_alloc(uint64 size);
