@@ -49,7 +49,6 @@ public:
         return (elemIndex != size && size != 0);
     }
 
-    //TODO check if this works
     inline void operator++() {
         //printf("ITERATOR: i = %u, lenght = %u\n")
         temp = next;

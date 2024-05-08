@@ -8,7 +8,6 @@
 #include "pcb.hpp"
 #include "sys_list.hpp"
 
-//TODO add async functionality
 class Scheduler {
 public:
     static void initialize();

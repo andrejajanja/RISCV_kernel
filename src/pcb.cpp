@@ -38,7 +38,6 @@ void PCB::freeState(ThreadState* state){
 }
 
 void PCB::dispatch_sync() {
-    //TODO check if this makes a bug with this
     if(Scheduler::hasOnlySleepingThreads()){
         if(setJmp(PCB::running) == 0){
             Riscv::waitForNextTimer();
@@ -69,7 +68,7 @@ void PCB::threadBegin(ThreadState *state) {
 
 void PCB::threadComplete() {
     Scheduler::removeRunning();
-    //TODO check if this makes a bug with this
+
     if(Scheduler::hasOnlySleepingThreads()){
         Riscv::waitForNextTimer();
     }

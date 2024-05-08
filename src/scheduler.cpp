@@ -16,21 +16,29 @@ void Scheduler::initialize() {
 
 void Scheduler::cleanUp() {
     delete pool;
+    delete sleeping;
 }
 
+uint32 tcnt = 0;
 void Scheduler::printThreads(){
+    tcnt++;
+    printf("--- (%u) Thread state ---\n", tcnt);
+
     if(pool->getCount() != 0){
-        printf("-- POOL: %d threads --\n", pool->getCount());
+        printf("- Pool -> %d ---\n", pool->getCount());
         for(Iterator<ThreadState*> iter = pool->getIterator(); iter.hasElements(); ++iter){
-            printf("Fun_addr: %u\n", (*iter)->registers[29]);
+            printf(" Addr: %u\n", (*iter)->registers[PC]);
         }
     }
+
     if(sleeping->getCount() != 0){
-        printf("-- SLEEPING: %d threads --\n", sleeping->getCount());
+        printf("- Sleeping -> %d ---\n", sleeping->getCount());
         for(Iterator<ThreadState*> iter = sleeping->getIterator(); iter.hasElements(); ++iter){
-            printf("Fun_addr: %u\n", (*iter)->registers[29]);
+            printf(" Addr: %u\n", (*iter)->registers[PC]);
         }
     }
+
+    printf("--- End thread state ---\n\n");
 }
 
 uint16 Scheduler::threadCount(){
@@ -54,7 +62,6 @@ void Scheduler::removeRunning(){
     PCB::freeState(tsTemp);
 }
 
-//FIXME this probably doesn't work
 void Scheduler::putRunningToSleep(uint16 howLong) {
     ThreadState* tsTemp = pool->removeLast();
     tsTemp->waitingFor = howLong;
@@ -68,9 +75,7 @@ void Scheduler::decrementSleeping() {
         ThreadState* temp = *iter;
         temp->waitingFor--;
         if(temp->waitingFor == 0){
-
             sleeping->remove(temp);
-
             temp->timeLeft = DEFAULT_TIME_SLICE;
             if(pool->getCount() == 0){
                 wokedUp = true;

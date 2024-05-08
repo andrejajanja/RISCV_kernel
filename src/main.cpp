@@ -5,6 +5,7 @@
 #include "../h/syscall_c.hpp"
 #include "../h/printing.hpp"
 #include "../h/sys_list.hpp"
+#include "../h/scheduler.hpp"
 asm(".global endOfProgramLabel;");
 
 void calculateSum(void*){
@@ -17,24 +18,55 @@ void calculateSum(void*){
     printf("--- Function ended %u. ---\n", sum);
 }
 
-#define tn 5
+//FIXME JEBENO NE RADI ZA 3 THREADA A RADI ZA SVE OSTALO
 void userMain(void*){
     printf("Main start\n");
-    thread_t handle;
-    thread_create(&handle, &calculateSum, nullptr);
-    thread_sleep(10);
+    thread_t handle[4];
+    for (int i = 0; i < 2; i++) {
+        thread_create(&handle[i], &calculateSum, nullptr);
+    }
+    thread_sleep(20);
     printf("Main ended\n");
 }
 
-//FIXME MEMORY ALLOCATOR FOR ALLOCATING SEGMENTS OF SAME SIZE
+//Test main
+//int main(){
+//    Riscv::writeStvec((uint64)&ecallWrapper);
+//    MemoryAllocator::initialize();
+//    uint32 begin = MemoryAllocator::print_segments();
+//
+//    void* segs[10];
+//    segs[0] = MemoryAllocator::mem_allocate(50);
+//    segs[1] = MemoryAllocator::mem_allocate(10);
+//    segs[2] = MemoryAllocator::mem_allocate(40);
+//    segs[3] = MemoryAllocator::mem_allocate(10);
+//    MemoryAllocator::mem_free(segs[0]);
+//    MemoryAllocator::mem_free(segs[2]);
+//    MemoryAllocator::mem_free(segs[1]);
+//    MemoryAllocator::mem_free(segs[3]);
+//    if(begin != MemoryAllocator::print_segments()){
+//        printf("Some error\n");
+//    }
+//
+//    asm("endOfProgramLabel:");
+//    Riscv::stopEmulator();
+//    return 0;
+//}
+
 int main(){
-    Riscv::initializeSystem();
+    //system initialize
+    Riscv::writeStvec((uint64)&ecallWrapper);
+    MemoryAllocator::initialize();
+    Scheduler::initialize();
 
     // - create thread context for main function and start it
     thread_create(&PCB::running, &userMain, nullptr);
     PCB::threadBegin(PCB::running);
     asm("endOfProgramLabel:");
-    printSystemState(true);
-    Riscv::shutdownSystem();
+
+    //system cleanup
+    Scheduler::cleanUp();
+    //TODO memory allocator cleanup
+    Riscv::stopEmulator();
     return 0;
 }
