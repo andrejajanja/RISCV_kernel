@@ -7,6 +7,10 @@
 .align 4
 .type _Z12ecallWrapperv, @function
 _Z12ecallWrapperv:
+    #check if system was just waiting for timer interrupt
+    li t0, 77
+    beq a7, t0, just_timer_interrupt
+
     #save user context to stack
     addi sp, sp, -256
     .irp index, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
@@ -23,6 +27,8 @@ _Z12ecallWrapperv:
     .endr
     addi sp, sp, 256
     sret
+just_timer_interrupt:
+    call _Z12timerHandlerv
 
 .type _ZN3PCB6setJmpEP11ThreadState, @function
 _ZN3PCB6setJmpEP11ThreadState:

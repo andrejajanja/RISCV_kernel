@@ -11,18 +11,15 @@
 #define SP 20
 #define RA 21
 #define PC 22
-#define SEPC 23
-#define SSTATUS 24
-#define SCAUSE 25
 
 struct ThreadState{
     //Order of registers in array:
     //a0 - a7, s0 - s11, sp, ra, pc, sepc, sstatus, scause,
     //0 - 7,   8 - 19,   20, 21, 22,   23,      24,     25,
-    size_t registers[25];
+    size_t registers[26];
     void* stackEnd; //pointer to the end thread stack
-    size_t timeLeft;
-    size_t waitingFor;
+    uint16 timeLeft;
+    uint16 waitingFor;
     bool isStarted;
 };
 typedef ThreadState* thread_t;

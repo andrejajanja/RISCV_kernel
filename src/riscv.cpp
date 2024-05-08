@@ -39,8 +39,16 @@ void Riscv::initializeSystem(){
     writeStvec((uint64)&ecallWrapper);
     MemoryAllocator::initialize();
     Scheduler::initialize();
-
 }
+
+//TODO check if this poisons the stack
+void Riscv::waitForNextTimer(){
+    asm volatile("li a7, 77;");
+    switchToUserMode();
+
+    while(true){}
+}
+
 void Riscv::switchToUserMode(){
     asm("li t0, 0;"
         "csrw sstatus, t0;"
@@ -58,14 +66,30 @@ void Riscv::shutdownSystem() {
     stopEmulator();
 }
 
-size_t timerNum = 0;
-
 //system calls handlers
+
+size_t timerNum = 0;
 void timerHandler(){
-//    printf("TS %u\n", timerNum++); //optional print
+    //FIXME waiting only works if period is less than 50 timer clocks, why is that so?
+    asm volatile("li a7, 0;");
+    //printf("TS %u\n", timerNum++); //optional print
 
     //async dispatch
     Scheduler::decrementSleeping();
+    if(Scheduler::hasOnlySleepingThreads()){
+        Riscv::waitForNextTimer();
+    }
+
+    if(Scheduler::wokedUp){
+        Scheduler::wokedUp = false;
+        PCB::running = Scheduler::get();
+
+        if(PCB::running->isStarted){
+            PCB::longJmp(PCB::running);
+        }else{
+            PCB::threadBegin(PCB::running);
+        }
+    }
     PCB::running->timeLeft--;
     if(PCB::running->timeLeft == 0){
         ThreadState* oldT = PCB::running;
@@ -127,9 +151,8 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             printf("Usao sam u sem_trywait\n");
             break;
 
-        case 0x31:
-            PCB::running->waitingFor = a1;
-            Scheduler::putToSleep(PCB::running);
+        case 0x31: //thread_sleep
+            Scheduler::putRunningToSleep(arg1);
             PCB::dispatch_sync();
             break;
 

@@ -22,9 +22,10 @@ public:
     static void remove(ThreadState* ts);
     static void removeRunning();
 
-    static void putToSleep(ThreadState* ts);
+    static void putRunningToSleep(uint16);
     static void decrementSleeping();
-
+    static bool hasOnlySleepingThreads();
+    static bool wokedUp;
 private:
     static SysList<ThreadState*>* pool;
     static SysList<ThreadState*>* sleeping;

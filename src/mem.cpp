@@ -33,9 +33,9 @@ void MemoryAllocator::initialize(){
 
 void MemoryAllocator::print_segments() {
     printf("- Free memory segments (pointer, size in blocks of %uB) -\n", MEM_BLOCK_SIZE);
+
     MemSegment* temp = segmentsHead;
-    uint16 i = 1;
-    while(temp >= HEAP_START_ADDR){
+    for (uint32 i = 0; i < segmentsNumber; i++) {
         printf("%u. %u %u\n", i, (uint64)temp, temp->size);
         i++; temp = temp->right;
     }
@@ -44,21 +44,21 @@ void MemoryAllocator::print_segments() {
 
 void* MemoryAllocator::mem_allocate(size_t size) {
     //doing some checks if it should even try to allocate space
-    if(segmentsNumber == 0 || size > totalSize) return nullptr;
+    if(segmentsNumber == 0 || size > totalSize) {
+        return nullptr;
+    }
 
     //TODO in the future, upgrade 'first fit' to some exotic algorithm with binary tree
-
     MemSegment* temp = segmentsHead;
     while(temp){
         if(size == temp->size){
-            totalSize-=size; segmentsNumber--;
+            totalSize-=size;
 
             if(temp->left) temp->left->right = temp->right;
             if(temp->right) temp->right->left = temp->left;
 
             *((size_t*)temp) = size; //this is size in segments stored in metadata
-            temp += sizeof(size_t); //shift pointer to account for metadata
-            return (void*)temp;
+            return (void*)((size_t)temp + sizeof(size_t));
         }
 
         if(size < temp->size){
@@ -84,6 +84,7 @@ void* MemoryAllocator::mem_allocate(size_t size) {
     return nullptr;
 }
 
+//FIXME THIS DOESN'T WORK
 int MemoryAllocator::mem_free(void* ptr) {
     //TODO optimize these 4 lines
     size_t size = *(size_t*)((uint64)(ptr)-sizeof(size_t));
@@ -93,7 +94,6 @@ int MemoryAllocator::mem_free(void* ptr) {
 
     //5,6
     size_t offset = size*MEM_BLOCK_SIZE;
-
     if(pointer < segmentsHead){
         pointer->left = nullptr;
 
@@ -129,7 +129,6 @@ int MemoryAllocator::mem_free(void* ptr) {
                         temp->right = pointer->right;
                     }
                 }
-
                 return 0;
             }
 
@@ -141,11 +140,9 @@ int MemoryAllocator::mem_free(void* ptr) {
                 temp->right = pointer;
                 pointer->left = temp;
             }
-
             return 0;
         }
     }
-
     return 0;
 }
 

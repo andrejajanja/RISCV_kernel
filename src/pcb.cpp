@@ -21,10 +21,10 @@ ThreadState* PCB::createState(void* start_routine, void* arg){
         sysCallExcepiton("Failed to allocate space for ThreadState data structure.");
         return nullptr;
     }else{
-        auto ptr = (ThreadState*)((uint64)spacePointer + DEFAULT_STACK_SIZE);
+        auto ptr = (ThreadState*)((size_t)spacePointer + DEFAULT_STACK_SIZE);
         ptr->registers[0] = (size_t)arg;
         ptr->registers[SP] = (uint64)ptr;
-        ptr->registers[RA] = (uint64) &threadCompleteSysCall;
+        ptr->registers[RA] = (uint64)&threadCompleteSysCall;
         ptr->registers[PC] = (uint64)start_routine;
         ptr->stackEnd = spacePointer;
         ptr->timeLeft = DEFAULT_TIME_SLICE;
@@ -38,6 +38,12 @@ void PCB::freeState(ThreadState* state){
 }
 
 void PCB::dispatch_sync() {
+    //TODO check if this makes a bug with this
+    if(Scheduler::hasOnlySleepingThreads()){
+        if(setJmp(PCB::running) == 0){
+            Riscv::waitForNextTimer();
+        }
+    }
     ThreadState* oldT = PCB::running;
     PCB::running = Scheduler::get();
     if(oldT == PCB::running) return;
@@ -63,6 +69,10 @@ void PCB::threadBegin(ThreadState *state) {
 
 void PCB::threadComplete() {
     Scheduler::removeRunning();
+    //TODO check if this makes a bug with this
+    if(Scheduler::hasOnlySleepingThreads()){
+        Riscv::waitForNextTimer();
+    }
 
     if(Scheduler::threadCount() == 0){
         //jumping to the end of the program

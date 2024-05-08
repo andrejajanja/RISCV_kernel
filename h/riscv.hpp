@@ -109,6 +109,7 @@ public:
         asm("csrw scause, %0;": "=r"(value));
     }
     static void switchToUserMode();
+    static void waitForNextTimer();
     static void stopEmulator();
     static void initializeSystem();
     static void shutdownSystem();

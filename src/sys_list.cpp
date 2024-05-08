@@ -4,6 +4,7 @@
 
 #include "../h/sys_list.hpp"
 #include "../h/pcb.hpp"
+#include "../h/riscv.hpp"
 
 template<typename T>
 SysList<T>::~SysList(){
@@ -86,7 +87,7 @@ void SysList<T>::insert(T data, short index){
 
 template<typename T>
 void SysList<T>::insertBeforeLast(T data){
-    if( count < 2){
+    if( count < 2 || lastElem == nullptr){
         appendFront(data);
     }else{
         Element<T>* temp = constructElement(data);
@@ -105,11 +106,11 @@ void SysList<T>::insertBeforeLast(T data){
 template<typename T>
 void SysList<T>::removeFront(){
     if(count == 0) return;
-
     if(count == 1){
-        delete listHead;
+        destructElement(listHead);
         listHead = nullptr;
         listBack = nullptr;
+        lastElem = nullptr;
     }else{
         Element<T>* temp = listHead;
         temp->right->left = listBack;
@@ -124,9 +125,10 @@ void SysList<T>::removeBack(){
     if(count == 0) return;
 
     if(count == 1){
-        delete listHead;
+        destructElement(listHead);
         listHead = nullptr;
         listBack = nullptr;
+        lastElem = nullptr;
     }else{
         Element<T>* temp = listBack;
         temp->left->right = listHead;
