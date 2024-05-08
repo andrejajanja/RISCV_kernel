@@ -18,14 +18,13 @@ void calculateSum(void*){
     printf("--- Function ended %u. ---\n", sum);
 }
 
-//FIXME JEBENO NE RADI ZA 3 THREADA A RADI ZA SVE OSTALO
 void userMain(void*){
     printf("Main start\n");
     thread_t handle[4];
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 3; i++) {
         thread_create(&handle[i], &calculateSum, nullptr);
     }
-    thread_sleep(20);
+    thread_sleep(15);
     printf("Main ended\n");
 }
 

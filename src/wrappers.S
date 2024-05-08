@@ -3,6 +3,7 @@
 .global _ZN3PCB7longJmpEP11ThreadState
 .global _ZN3PCB11threadStartEP11ThreadState
 .global _ZN3PCB21threadCompleteSysCallEv
+.global _ZN5Riscv16waitForNextTimerEv
 
 .align 4
 .type _Z12ecallWrapperv, @function
@@ -134,3 +135,9 @@ _ZN3PCB11threadStartEP11ThreadState:
 _ZN3PCB21threadCompleteSysCallEv:
     li a0, 0x12
     ecall
+
+.type _ZN5Riscv16waitForNextTimerEv, @function
+_ZN5Riscv16waitForNextTimerEv:
+    li a7, 77
+    call _ZN5Riscv16switchToUserModeEv
+    j _ZN5Riscv16waitForNextTimerEv+8

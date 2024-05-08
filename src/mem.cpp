@@ -122,6 +122,7 @@ int MemoryAllocator::mem_free(void* ptr) {
 
         if((MemSegment*)((uint64)pointer+offset) == segmentsHead){ //5 try join from the right
             pointer->right = segmentsHead->right;
+            if(segmentsHead->right) segmentsHead->right->left = pointer;
             pointer->size += segmentsHead->size;
         }else{ //6 couldn't do join
             pointer->right = segmentsHead;
@@ -156,11 +157,12 @@ int MemoryAllocator::mem_free(void* ptr) {
                     return 0;
                 }
 
-                if(!case3happend){
+                if(!case3happend){ // 1
                     temp->right->left = pointer;
                     pointer->left = temp;
                     pointer->right = temp->right;
                     temp->right = pointer;
+                    segmentsNumber++; //Za moje babe zdravlje!
                 }
 
                 return 0;

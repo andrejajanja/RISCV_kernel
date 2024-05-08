@@ -9,6 +9,15 @@
 #include "../h/scheduler.hpp"
 #include "../h/syscall_cpp.hpp"
 
+//void Riscv::waitForNextTimer(){
+//
+//    asm volatile("addi sp, sp, 16;"
+//                 "li a7, 77;");
+//    switchToUserMode();
+//
+//    while(true){}
+//}
+
 void Riscv::stopEmulator(){
     printf("\n\t-- Shutting down --\n");
     //defined in project file
@@ -33,16 +42,6 @@ void sysCallExcepiton(const char* msg){
     Riscv::stopEmulator();
 }
 
-//TODO check if this poisons the stack
-void Riscv::waitForNextTimer(){
-
-    asm volatile("addi sp, sp, 16;"
-                 "li a7, 77;");
-    switchToUserMode();
-
-    while(true){}
-}
-
 void Riscv::switchToUserMode(){
     asm("li t0, 0;"
         "csrw sstatus, t0;"
@@ -63,7 +62,7 @@ void timerHandler(){
 
     //async dispatch
     Scheduler::decrementSleeping();
-    Scheduler::printThreads();
+    //Scheduler::printThreads();
     if(Scheduler::hasOnlySleepingThreads()){
         Riscv::waitForNextTimer();
     }
@@ -71,7 +70,6 @@ void timerHandler(){
     if(Scheduler::wokedUp){
         Scheduler::wokedUp = false;
         PCB::running = Scheduler::get();
-
         if(PCB::running->isStarted){
             PCB::longJmp(PCB::running);
         }else{
@@ -90,7 +88,7 @@ void timerHandler(){
 }
 
 void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
-    uint64 arg1 = a1; uint64 arg2 = a2; //FIXME do I even need to hold these here
+    uint64 arg1 = a1; uint64 arg2 = a2;
     uint64 arg3 = a3; uint64 retValue;
     ThreadState* ts;
 

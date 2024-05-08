@@ -68,7 +68,6 @@ void Scheduler::putRunningToSleep(uint16 howLong) {
     sleeping->appendFront(tsTemp);
 }
 
-//FIXME this doesn't work
 void Scheduler::decrementSleeping() {
     if(sleeping->getCount() == 0) return;
     for (Iterator<ThreadState*> iter = sleeping->getIterator(); iter.hasElements(); iter.operator++()) {
@@ -80,7 +79,6 @@ void Scheduler::decrementSleeping() {
             if(pool->getCount() == 0){
                 wokedUp = true;
             }
-
             pool->insertBeforeLast(temp);
         }
     }
@@ -89,4 +87,3 @@ void Scheduler::decrementSleeping() {
 bool Scheduler::hasOnlySleepingThreads() {
     return (sleeping->getCount() > 0 && pool->getCount() == 0);
 }
-

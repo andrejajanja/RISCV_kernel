@@ -23,7 +23,8 @@ SysList<T>::~SysList(){
 
 template<typename T>
 void SysList<T>::appendFront(T data) {
-    Element<T>* temp = constructElement(data);
+    Element<T>* temp = constructElement<T>();
+    temp->data = data;
     if(count == 0){
         listHead = temp;
         listBack = temp;
