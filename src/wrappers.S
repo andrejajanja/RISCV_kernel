@@ -5,6 +5,7 @@
 .global _ZN3PCB21threadCompleteSysCallEv
 .global _ZN5Riscv16waitForNextTimerEv
 .global _ZN5Riscv16switchToUserModeEv
+.global _ZN5Riscv17switchToUserModeHEv
 
 .align 4
 .type _Z12ecallWrapperv, @function
@@ -20,8 +21,6 @@ _Z12ecallWrapperv:
     .endr
 
     call _Z12ecallHandlerv
-    li t0, 0;
-    csrw sip, t0; #marking software interrupt resolved
 
     # pop all registers from stack
     .irp index, 1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
@@ -150,6 +149,17 @@ _ZN5Riscv16switchToUserModeEv:
     csrw sip, t0 #SIP = 0 for marking software interrupt resolved
     li t0, 2
     csrw sie, t0 #SIE = 2 for allowing only software interrupts
+    mv t0, ra
+    csrw sepc, t0
+    sret
+
+.type _ZN5Riscv17switchToUserModeHEv, @function
+_ZN5Riscv17switchToUserModeHEv:
+    li t0, 0
+    csrw sstatus, t0
+    csrw sip, t0 #SIP = 0 for marking software interrupt resolved
+    li t0, 512
+    csrw sie, t0 #SIE = 512 for allowing only hardware interrupts
     mv t0, ra
     csrw sepc, t0
     sret

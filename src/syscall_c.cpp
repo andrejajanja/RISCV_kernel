@@ -4,7 +4,7 @@
 #include "../h/syscall_c.hpp"
 #include "../h/riscv.hpp"
 #include "../h/exception.hpp"
-#include "../h/printing.hpp"
+#include "../h/standardio.hpp"
 
 //TODO optimize readA0 function everywhere, is it even needed?
 

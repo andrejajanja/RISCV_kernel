@@ -3,9 +3,9 @@
 //
 #include "../h/riscv.hpp"
 #include "../h/syscall_c.hpp"
-#include "../h/printing.hpp"
-#include "../h/sys_list.hpp"
+#include "../h/standardio.hpp"
 #include "../h/scheduler.hpp"
+#include "../h/console.hpp"
 asm(".global endOfProgramLabel;");
 
 void calculateSum(void*){
@@ -54,7 +54,8 @@ void userMain(void*){
 
 //Test main
 int main(){
-    printf("'%d'\n", -1);
+    Riscv::writeStvec((uint64)&ecallWrapper);
+    Console::initialize();
     Riscv::stopEmulator();
     asm("endOfProgramLabel:");
     return 0;

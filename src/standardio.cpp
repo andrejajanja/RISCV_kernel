@@ -6,13 +6,14 @@
 //
 // Created by os on 4/21/24.
 //
-#include "../h/printing.hpp"
+#include "../h/standardio.hpp"
 #include "../h/riscv.hpp"
+#include "../h/syscall_c.hpp"
 
 //'printType' - polymorphed funtion that print out base types impemented here
 void printType(const char* str){
     while (*str != '\0'){
-        __putc(*str);
+        putc(*str);
         str++;
     }
     return;
@@ -20,12 +21,12 @@ void printType(const char* str){
 
 void printType(int number){
     if(number==0){
-        __putc('0');
+        putc('0');
         return;
     }
 
     if(number < 0){
-        __putc('-');
+        putc('-');
         number = -number;
     }
 
@@ -40,7 +41,7 @@ void printType(int number){
     digitNum--;
 
     while(digitNum>-1){
-        __putc((char)(48+digits[digitNum]));
+        putc((char)(48+digits[digitNum]));
         digitNum--;
     }
     return;
@@ -48,7 +49,7 @@ void printType(int number){
 
 void printType(uint64 number){
     if(number == 0){
-        __putc('0');
+        putc('0');
     }else{
         int digits[20];
         int digitNum = 0;
@@ -61,7 +62,7 @@ void printType(uint64 number){
         digitNum--;
 
         while(digitNum>-1){
-            __putc((char)(48+digits[digitNum]));
+            putc((char)(48+digits[digitNum]));
             digitNum--;
         }
     }
@@ -69,16 +70,16 @@ void printType(uint64 number){
 
 void printType(bool cond){
     if(cond){
-        __putc('t');
-        __putc('r');
-        __putc('u');
-        __putc('e');
+        putc('t');
+        putc('r');
+        putc('u');
+        putc('e');
     }else{
-        __putc('f');
-        __putc('a');
-        __putc('l');
-        __putc('s');
-        __putc('e');
+        putc('f');
+        putc('a');
+        putc('l');
+        putc('s');
+        putc('e');
     }
 }
 
@@ -125,7 +126,7 @@ void printf(const char* str, ...){
             }
             arg_cnt++;
         }else{
-            __putc(*str);
+            putc(*str);
         }
         str++;
     }

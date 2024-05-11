@@ -2,11 +2,10 @@
 // Created by os on 4/21/24.
 //
 
-#ifndef RISCV_KERNEL_PRINTING_H
-#define RISCV_KERNEL_PRINTING_H
+#ifndef RISCV_KERNEL_STANDARDIO_H
+#define RISCV_KERNEL_STANDARDIO_H
 
 #include "../lib/hw.h"
-#include "../lib/console.h"
 
 //'printType' - polymorphed funtion that print out base types impemented here
 void printType(const char* str);
@@ -21,4 +20,6 @@ void printType(bool cond);
 
 void printf(const char* str, ...);
 
-#endif //RISCV_KERNEL_PRINTING_H
+void scanf(const char* str, ...);
+
+#endif //RISCV_KERNEL_STANDARDIO_H

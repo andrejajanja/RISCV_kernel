@@ -3,12 +3,9 @@
 //
 
 #include "../h/riscv.hpp"
-#include "../h/printing.hpp"
 #include "../h/mem.hpp"
-#include "../h/pcb.hpp"
-#include "../h/sem.hpp"
 #include "../h/scheduler.hpp"
-#include "../h/syscall_cpp.hpp"
+#include "../h/console.hpp"
 
 void Riscv::stopEmulator(){
 //    printf("\n\t-- Shutting down --\n");
@@ -16,6 +13,13 @@ void Riscv::stopEmulator(){
     asm("la t0, 0x100000;" //adress
         "la t1, 0x5555;" //value
         "sw t1, 0(t0);");
+}
+
+//TODO finnish wait for hardware interrupt
+void Riscv::waitForHardwareInterrupt() {
+    switchToUserModeH();
+    while(true){}
+    asm("doneWaitingForHardware:");
 }
 
 void printSystemState(bool memmory, bool threads, bool semaphores){
@@ -32,6 +36,17 @@ void printSystemState(bool memmory, bool threads, bool semaphores){
 void sysCallExcepiton(const char* msg){
     printf("OS called exception,\nMessage: %s\n", msg);
     Riscv::stopEmulator();
+}
+
+void hadrwareHandler(){
+    //if some other device caused hardware interrupt, shutdown
+    if(plic_claim() != CONSOLE_IRQ){
+        Riscv::stopEmulator();
+    }
+    char st = Riscv::readConsoleStatus();
+    //TODO add thread change here, to first thread that was waiting for console
+    plic_complete(10);
+    Riscv::writeA0((size_t)st);
 }
 
 //system calls handlers
@@ -137,10 +152,11 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             break;
 
         case 0x41: //getc
-            printf("Usao sam u getc\n");
+            retValue = Console::getc();
+            Riscv::writeA0(retValue);
             break;
         case 0x42: //putc
-            printf("Usao sam u putc\n");
+            Console::putc((char)arg1);
             break;
 
         case 0x50: //exception handler
@@ -164,12 +180,18 @@ void ecallHandler(){
     uint64 sstatus = Riscv::readSstatus();
 
     switch (scause) {
-        case 0x8000000000000001UL:
+        case 0x8000000000000001UL: //timer as software interrupt
             timerHandler();
+            asm("csrr t0, sip;"
+                "add t0, t0, -1;"
+                "csrw sip, t0;"); //marking software interrupt resolved
             break;
-        case 0x0000000000000008UL:
+        case 0x0000000000000008UL: //software interrupt handle
         case 0x0000000000000009UL:
             systemCallHandler(a0, a1, a2, a3);
+            asm("csrr t0, sip;"
+                "add t0, t0, -1;"
+                "csrw sip, t0;"); //marking software interrupt resolved
             break;
         case 0x0000000000000002UL:
             printType("OS DETECTED ERROR: Illegal instruction\n");
@@ -183,8 +205,8 @@ void ecallHandler(){
             printType("OS DETECTED ERROR: writing to forbidden address\n");
             Riscv::stopEmulator();
             break;
-        case 0x8000000000000009UL:
-            printf("Hardware interrupt");
+        case 0x8000000000000009UL: //hardware interrupt handle
+            hadrwareHandler();
             break;
         default:
             //this is error case, because no other case should go here, print something

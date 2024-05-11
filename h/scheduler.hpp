@@ -6,8 +6,8 @@
 #define RISCV_KERNEL_SCHEDULER_H
 
 #include "pcb.hpp"
-#include "sys_list.hpp"
 #include "sem.hpp"
+#include "sys_list.hpp"
 
 class Scheduler {
 public:

@@ -84,6 +84,27 @@ public:
         return value;
     }
 
+    static inline char readConsoleStatus(){
+        char value;
+        asm("mv t0, %1;"
+            "lb %0, 0(t0);": "=r"(value):"r"(CONSOLE_STATUS));
+        return value;
+    }
+
+    static inline void writeConsole(char value){
+        asm("mv t0, %1;"
+            "sb %0, 0(t0);": "=r"(value):"r"(CONSOLE_TX_DATA));
+    }
+
+    static inline char readConsole(){
+        char value;
+        asm("mv t0, %1;"
+            "lb %0, 0(t0);": "=r"(value):"r"(CONSOLE_RX_DATA));
+        return value;
+
+        return value;
+    }
+
 //write ops
     static inline void writeStvec(uint64 value){
         asm("csrw stvec, %0;": :"r"(value));
@@ -108,8 +129,12 @@ public:
     static inline void writeScause(uint64 value){
         asm("csrw scause, %0;": "=r"(value));
     }
+
+
     static void switchToUserMode();
+    static void switchToUserModeH();
     static void waitForNextTimer();
+    static void waitForHardwareInterrupt();
     static void stopEmulator();
     static void initializeSystem();
     static void shutdownSystem();
