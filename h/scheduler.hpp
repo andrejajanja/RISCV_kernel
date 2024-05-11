@@ -7,6 +7,7 @@
 
 #include "pcb.hpp"
 #include "sys_list.hpp"
+#include "sem.hpp"
 
 class Scheduler {
 public:
@@ -24,10 +25,18 @@ public:
     static void putRunningToSleep(uint16);
     static void decrementSleeping();
     static bool hasOnlySleepingThreads();
+
+    static bool hasBlockedThreads();
+    static void blockRunning();
+    static void unblockThread(ThreadState*);
+    static void unblockOneForSem(SemState* sem);
+    static void deleteBlockedForSem(SemState* sem);
+
     static bool wokedUp;
 private:
     static SysList<ThreadState*>* pool;
     static SysList<ThreadState*>* sleeping;
+    static SysList<ThreadState*>* blocked;
 };
 
 

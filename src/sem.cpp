@@ -3,23 +3,44 @@
 //
 
 #include "../h/sem.hpp"
+#include "../h/mem.hpp"
+#include "../h/riscv.hpp"
+#include "../h/scheduler.hpp"
 
 SemState* SEM::constructSem(int init) {
-    return nullptr;
+    auto semPtr = (SemState*)MemoryAllocator::mem_allocate(1);
+    if(semPtr == nullptr){
+        sysCallExcepiton("Failed to allocate space for SemState* structure.");
+        return nullptr;
+    }
+
+    semPtr->state = init;
+    return semPtr;
 }
 
-SemState* SEM::destructSem(int init) {
-    return nullptr;
+int SEM::destructSem(SemState* sem) {
+    return MemoryAllocator::mem_free(sem);
 }
 
-void SEM::semSignal(sem_t handle) {
-
+void SEM::semSignal(SemState* handle) {
+    handle->state++;
+    if(handle->state > 0){
+        return;
+    }
+    Scheduler::unblockOneForSem(handle);
 }
 
-void SEM::semWait(sem_t handle) {
-
+void SEM::semWait(SemState* handle) {
+    if(handle->state > 0){
+        handle->state--;
+        return;
+    }
+    handle->state--;
+    PCB::running->semaphore = handle;
+    Scheduler::blockRunning();
 }
 
+//TODO Finnish timedWait
 void SEM::semTimedWait(sem_t handle, time_t timeout) {
 
 }

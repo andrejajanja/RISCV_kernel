@@ -6,20 +6,12 @@
 #include "../h/printing.hpp"
 #include "../h/mem.hpp"
 #include "../h/pcb.hpp"
+#include "../h/sem.hpp"
 #include "../h/scheduler.hpp"
 #include "../h/syscall_cpp.hpp"
 
-//void Riscv::waitForNextTimer(){
-//
-//    asm volatile("addi sp, sp, 16;"
-//                 "li a7, 77;");
-//    switchToUserMode();
-//
-//    while(true){}
-//}
-
 void Riscv::stopEmulator(){
-    printf("\n\t-- Shutting down --\n");
+//    printf("\n\t-- Shutting down --\n");
     //defined in project file
     asm("la t0, 0x100000;" //adress
         "la t1, 0x5555;" //value
@@ -38,19 +30,8 @@ void printSystemState(bool memmory, bool threads, bool semaphores){
 }
 
 void sysCallExcepiton(const char* msg){
-    printf("OS called exception,\nMessage: %s\n\n", msg);
+    printf("OS called exception,\nMessage: %s\n", msg);
     Riscv::stopEmulator();
-}
-
-void Riscv::switchToUserMode(){
-    asm("li t0, 0;"
-        "csrw sstatus, t0;"
-        "csrw sip, t0;" //SIP = 0 for marking software interrupt resolved
-        "li t0, 2;"
-        "csrw sie, t0;" //SIE = 2 for allowing only software interrupts
-        "mv t0, ra;"
-        "csrw sepc, t0;"
-        "sret;");
 }
 
 //system calls handlers
@@ -89,14 +70,13 @@ void timerHandler(){
 void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
     uint64 arg1 = a1; uint64 arg2 = a2;
     uint64 arg3 = a3; uint64 retValue;
-    ThreadState* ts;
+    ThreadState* ts; SemState* semSt;
 
     switch (opCode) {
         case 0x01: //mem_alloc
             retValue = (uint64)MemoryAllocator::mem_allocate(arg1);
             Riscv::writeA0(retValue);
             break;
-
         case 0x02: //mem_free
             retValue = (uint64)MemoryAllocator::mem_free((void*)arg1);
             Riscv::writeA0(retValue);
@@ -109,53 +89,65 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             Scheduler::put(ts);
             Riscv::writeA0(0);
             break;
-
         case 0x12: //thread_exit
             PCB::threadComplete();
             break;
-
         case 0x13: //thread_dispatch
             PCB::dispatch_sync();
             break;
-
-        case 0x21:
-            printf("Usao sam u sem_open\n");
-            break;
-        case 0x22:
-            printf("Usao sam u sem_close\n");
-            break;
-        case 0x23:
-            printf("Usao sam u sem_wait\n");
-            break;
-        case 0x24:
-            printf("Usao sam u sem_signal\n");
-            break;
-        case 0x25:
-            printf("Usao sam u sem_timedwait\n");
-            break;
-        case 0x26:
-            printf("Usao sam u sem_trywait\n");
-            break;
-
         case 0x31: //thread_sleep
             Scheduler::putRunningToSleep(arg1);
             PCB::dispatch_sync();
+            Riscv::writeA0(0);
             break;
 
-        case 0x41:
+        case 0x21: //sem_create
+            retValue = arg1;
+            semSt = SEM::constructSem(arg2);
+            *((uint64*)retValue) = (uint64)semSt;
+            Riscv::writeA0(0);
+            break;
+        case 0x22: //sem_close
+            semSt = (SemState*)arg1;
+            retValue = 0;
+            if(semSt->state < 1){
+                retValue = -1;
+                Scheduler::deleteBlockedForSem(semSt);
+            }
+            SEM::destructSem(semSt);
+            Riscv::writeA0((uint64)retValue);
+            break;
+        case 0x23: //sem_wait
+            SEM::semWait((SemState*)arg1);
+            break;
+        case 0x24: //sem_signal
+            SEM::semSignal((SemState*)arg1);
+            break;
+        case 0x25: //sem_timedwait
+            SEM::semTimedWait((SemState*)arg1, (time_t)arg2);
+            break;
+        case 0x26: //sem_trywait
+            //TODO Check if trywait should do this
+            semSt = (SemState*)arg1;
+            if(semSt->state < 1){
+                Riscv::writeA0((uint64)0);
+            }else{
+                Riscv::writeA0((uint64)1);
+            }
+            break;
+
+        case 0x41: //getc
             printf("Usao sam u getc\n");
             break;
-        case 0x42:
+        case 0x42: //putc
             printf("Usao sam u putc\n");
             break;
 
-        case 0x50:
-            printf("User called an Exception,\nMessage: %s\n\n", (const char*)(a1));
+        case 0x50: //exception handler
+            printf("Exception => %s\n\n", (const char*)(a1));
             Riscv::stopEmulator();
             break;
-
         default: //some random code, that should be handler as error
-            //this is error case, because no other case should go here, print something
             printf("OS DETECTED ERROR: Unhandled opCode value for system call: '%u'\n", opCode);
             Riscv::stopEmulator();
             break;

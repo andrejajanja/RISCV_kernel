@@ -20,21 +20,22 @@ ThreadState* PCB::createState(void* start_routine, void* arg){
     if(spacePointer == nullptr){
         sysCallExcepiton("Failed to allocate space for ThreadState data structure.");
         return nullptr;
-    }else{
-        auto ptr = (ThreadState*)((size_t)spacePointer + DEFAULT_STACK_SIZE);
-        ptr->registers[0] = (size_t)arg;
-        ptr->registers[SP] = (uint64)ptr;
-        ptr->registers[RA] = (uint64)&threadCompleteSysCall;
-        ptr->registers[PC] = (uint64)start_routine;
-        ptr->stackEnd = spacePointer;
-        ptr->timeLeft = DEFAULT_TIME_SLICE;
-        ptr->isStarted = false;
-        return ptr;
     }
+
+    auto ptr = (ThreadState*)((size_t)spacePointer + DEFAULT_STACK_SIZE);
+    ptr->registers[0] = (size_t)arg;
+    ptr->registers[SP] = (uint64)ptr;
+    ptr->registers[RA] = (uint64)&threadCompleteSysCall;
+    ptr->registers[PC] = (uint64)start_routine;
+    ptr->stackEnd = spacePointer;
+    ptr->timeLeft = DEFAULT_TIME_SLICE;
+    ptr->semaphore = nullptr;
+    ptr->isStarted = false;
+    return ptr;
 }
 
-void PCB::freeState(ThreadState* state){
-    MemoryAllocator::mem_free(state->stackEnd);
+int PCB::freeState(ThreadState* state){
+    return MemoryAllocator::mem_free(state->stackEnd);
 }
 
 void PCB::dispatch_sync() {

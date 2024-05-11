@@ -5,6 +5,10 @@
 #include "../h/mem.hpp"
 #include "../h/pcb.hpp"
 
+MemSegment* MemoryAllocator::segmentsHead = nullptr;
+uint32 MemoryAllocator::totalSize = 0;
+uint32 MemoryAllocator::segmentsNumber = 1;
+
 template<typename T>
 size_t calculateSize(){
     size_t size = sizeof(T);
@@ -17,10 +21,6 @@ size_t calculateSize(){
 
     return size;
 }
-
-MemSegment* MemoryAllocator::segmentsHead = nullptr;
-uint32 MemoryAllocator::totalSize = 0;
-uint32 MemoryAllocator::segmentsNumber = 1;
 
 void MemoryAllocator::initialize(){
     MemoryAllocator::segmentsHead = (MemSegment*)(HEAP_START_ADDR);

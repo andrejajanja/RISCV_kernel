@@ -4,6 +4,7 @@
 .global _ZN3PCB11threadStartEP11ThreadState
 .global _ZN3PCB21threadCompleteSysCallEv
 .global _ZN5Riscv16waitForNextTimerEv
+.global _ZN5Riscv16switchToUserModeEv
 
 .align 4
 .type _Z12ecallWrapperv, @function
@@ -141,3 +142,14 @@ _ZN5Riscv16waitForNextTimerEv:
     li a7, 77
     call _ZN5Riscv16switchToUserModeEv
     j _ZN5Riscv16waitForNextTimerEv+8
+
+.type _ZN5Riscv16switchToUserModeEv, @function
+_ZN5Riscv16switchToUserModeEv:
+    li t0, 0
+    csrw sstatus, t0
+    csrw sip, t0 #SIP = 0 for marking software interrupt resolved
+    li t0, 2
+    csrw sie, t0 #SIE = 2 for allowing only software interrupts
+    mv t0, ra
+    csrw sepc, t0
+    sret

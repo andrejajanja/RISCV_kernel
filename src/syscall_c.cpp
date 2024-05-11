@@ -3,6 +3,8 @@
 //
 #include "../h/syscall_c.hpp"
 #include "../h/riscv.hpp"
+#include "../h/exception.hpp"
+#include "../h/printing.hpp"
 
 //TODO optimize readA0 function everywhere, is it even needed?
 
@@ -36,6 +38,14 @@ int mem_free(void* pointer){
 
 //threads
 int thread_create(thread_t* handle, void(*start_routine)(void*), void* arg){
+    if(handle == nullptr){
+        new Exception("thread_create: handle argument can't be null");
+    }
+
+    if(handle == nullptr){
+        new Exception("thread_create: start_routine argument can't be null");
+    }
+
     asm("mv a3, %2;"
         "mv a2, %1;"
         "mv a1, %0;"
@@ -59,6 +69,9 @@ int thread_dispatch(){
 }
 
 int thread_sleep(time_t duration){
+    if(duration == 0){
+        new Exception("thread_sleep: duration can't be less then 1");
+    }
     asm("mv a1, %0;"
         "li a0, 0x31;"
         "ecall;" : : "r"(duration));
@@ -68,6 +81,14 @@ int thread_sleep(time_t duration){
 
 //semaphores
 int sem_open(sem_t* handle, unsigned init){
+    if(handle == nullptr){
+        new Exception("sem_open: handle argument can't be null");
+    }
+
+    if(init < 1){
+        new Exception("sem_open: init argument can't be less then 1");
+    }
+
     asm("mv a2, %1;"
         "mv a1, %0;"
         "li a0, 0x21;"
@@ -77,6 +98,9 @@ int sem_open(sem_t* handle, unsigned init){
 }
 
 int sem_close(sem_t handle){
+    if(handle == nullptr){
+        new Exception("sem_close: handle argument can't be null");
+    }
     asm("mv a1, %0;"
         "li a0, 0x22;"
         "ecall;" : : "r"(handle));
@@ -85,6 +109,9 @@ int sem_close(sem_t handle){
 }
 
 int sem_wait(sem_t id){
+    if(id == nullptr){
+        new Exception("sem_wait: id can't be null");
+    }
     asm("mv a1, %0;"
         "li a0, 0x23;"
         "ecall;" : : "r"(id));
@@ -93,6 +120,9 @@ int sem_wait(sem_t id){
 }
 
 int sem_signal(sem_t id){
+    if(id == nullptr){
+        new Exception("sem_signal: id can't be null");
+    }
     asm("mv a1, %0;"
         "li a0, 0x24;"
         "ecall;" : : "r"(id));
@@ -101,6 +131,16 @@ int sem_signal(sem_t id){
 }
 
 int sem_timedwait(sem_t id, time_t timeout){
+    if(id == nullptr){
+        new Exception("sem_timedwait: id can't be null");
+        return 0;
+    }
+
+    if(timeout < 1){
+        new Exception("sem_timedwait: timeout can't be less then 1");
+        return 0;
+    }
+
     asm("mv a2, %1;"
         "mv a1, %0;"
         "li a0, 0x25;"

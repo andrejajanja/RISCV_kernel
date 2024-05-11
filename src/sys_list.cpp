@@ -9,7 +9,13 @@
 
 //SysIterator
 template <typename T>
-SysIterator<T>::SysIterator(SysListElement<T>* beginning, short size): temp(beginning), next(beginning->right), size(size), elemIndex(0) {}
+SysIterator<T>::SysIterator(SysListElement<T>* beginning, short size, bool inverse): temp(beginning), next(nullptr), size(size), elemIndex(0), inverse(inverse) {
+    if(inverse){
+        next = beginning->left;
+    }else{
+        next = beginning->right;
+    }
+}
 
 template <typename T>
 bool SysIterator<T>::hasElements() const {
@@ -19,7 +25,11 @@ bool SysIterator<T>::hasElements() const {
 template <typename T>
 void SysIterator<T>::operator++() {
     temp = next;
-    next = temp->right;
+    if(inverse){
+        next = temp->left;
+    }else{
+        next = temp->right;
+    }
     elemIndex++;
 }
 
@@ -94,10 +104,9 @@ void SysList<T>::appendBack(T data) {
     SysListElement<T>* temp = constructElement(data);
     if(count == 0){
         listHead = temp;
-        listHead = temp;
+        listBack = temp;
         lastElem = temp;
     }
-
     temp->left = listBack;
     temp->right = listHead;
     listBack->right = temp;

@@ -4,36 +4,48 @@
 
 #include "../h/scheduler.hpp"
 #include "../h/riscv.hpp"
+#include "../h/sem.hpp"
 
 SysList<ThreadState*>* Scheduler::pool = nullptr;
 SysList<ThreadState*>* Scheduler::sleeping = nullptr;
+SysList<ThreadState*>* Scheduler::blocked = nullptr;
+
 bool Scheduler::wokedUp = false;
 
 void Scheduler::initialize() {
     pool = new SysList<ThreadState*>();
     sleeping = new SysList<ThreadState*>();
+    blocked = new SysList<ThreadState*>();
 }
 
 void Scheduler::cleanUp() {
     delete pool;
     delete sleeping;
+    delete blocked;
 }
 
-uint32 tcnt = 0;
+uint32 threadPrintCounter = 0;
 void Scheduler::printThreads(){
-    tcnt++;
-    printf("--- (%u) Thread state ---\n", tcnt);
+    threadPrintCounter++;
+    printf("--- (%u) Thread state ---\n", threadPrintCounter);
 
     if(pool->getCount() != 0){
         printf("- Pool -> %d ---\n", pool->getCount());
-        for(SysIterator<ThreadState*> iter = pool->getIterator(); iter.hasElements(); ++iter){
+        for(auto iter = pool->getIterator(); iter.hasElements(); ++iter){
             printf(" Addr: %u\n", (*iter)->registers[PC]);
         }
     }
 
     if(sleeping->getCount() != 0){
         printf("- Sleeping -> %d ---\n", sleeping->getCount());
-        for(SysIterator<ThreadState*> iter = sleeping->getIterator(); iter.hasElements(); ++iter){
+        for(auto iter = sleeping->getIterator(); iter.hasElements(); ++iter){
+            printf(" Addr: %u\n", (*iter)->registers[PC]);
+        }
+    }
+
+    if(blocked->getCount() != 0){
+        printf("- Blocked -> %d ---\n", blocked->getCount());
+        for(auto iter = blocked->getIterator(); iter.hasElements(); ++iter){
             printf(" Addr: %u\n", (*iter)->registers[PC]);
         }
     }
@@ -87,3 +99,43 @@ void Scheduler::decrementSleeping() {
 bool Scheduler::hasOnlySleepingThreads() {
     return (sleeping->getCount() > 0 && pool->getCount() == 0);
 }
+
+bool Scheduler::hasBlockedThreads() {
+    return (blocked->getCount() == 0)? false : true;
+}
+
+//TODO check for bugs
+void Scheduler::blockRunning(){
+    ThreadState* tsTemp = pool->removeLast();
+    blocked->appendBack(tsTemp);
+    PCB::dispatch_sync();
+}
+
+//TODO check for bugs
+void Scheduler::unblockThread(ThreadState* ts) {
+    blocked->remove(ts);
+    pool->insertBeforeLast(ts);
+}
+
+void Scheduler::unblockOneForSem(SemState* semSt) {
+    for (auto iter = blocked->getIterator(); iter.hasElements(); ++iter) {
+        if ((*iter)->semaphore == semSt) {
+            ThreadState *tempState = *iter;
+            tempState->semaphore = nullptr;
+            blocked->remove(tempState);
+            pool->insertBeforeLast(tempState);
+            break;
+        }
+    }
+}
+
+void Scheduler::deleteBlockedForSem(SemState *semSt) {
+    for(auto iter = blocked->getIterator(false); iter.hasElements(); ++iter){
+        if ((*iter)->semaphore == semSt) {
+            ThreadState *tempState = *iter;
+            tempState->semaphore = nullptr;
+            blocked->remove(tempState);
+        }
+    }
+}
+

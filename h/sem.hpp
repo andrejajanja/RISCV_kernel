@@ -4,7 +4,7 @@
 
 #ifndef RISCV_KERNEL_SEMAPHORE_H
 #define RISCV_KERNEL_SEMAPHORE_H
-#include "scheduler.hpp"
+#include "../lib/hw.h"
 
 struct SemState{
     int state;
@@ -13,11 +13,12 @@ struct SemState{
 typedef SemState* sem_t;
 
 class SEM {
-    static SemState* constructSem(int init);
-    static SemState* destructSem(int init);
-    static void semSignal(sem_t handle);
-    static void semWait(sem_t handle);
-    static void semTimedWait(sem_t handle, time_t timeout);
+public:
+    static SemState* constructSem(int);
+    static int destructSem(SemState*);
+    static void semSignal(sem_t);
+    static void semWait(sem_t);
+    static void semTimedWait(sem_t, time_t);
 };
 
 

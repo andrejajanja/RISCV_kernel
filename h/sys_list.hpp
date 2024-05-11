@@ -18,7 +18,7 @@ struct SysListElement{
 template <typename T>
 class SysIterator{
 public:
-    SysIterator(SysListElement<T>* beginning, short size);
+    SysIterator(SysListElement<T>* beginning, short size, bool inverse);
 
     bool hasElements() const;
     void operator++();
@@ -28,6 +28,7 @@ private:
     SysListElement<T>* next;
     uint16 size;
     uint16 elemIndex;
+    bool inverse;
 };
 
 template<typename T>
@@ -58,8 +59,12 @@ public:
 
     T indexof(short index);
 
-    inline SysIterator<T> getIterator() const{
-        return SysIterator<T>(this->listHead, this->count);
+    inline SysIterator<T> getIterator(bool inverse = false) const{
+        if(inverse){
+            return SysIterator<T>(this->listBack, this->count, inverse);
+        }else{
+            return SysIterator<T>(this->listHead, this->count, inverse);
+        }
     }
 
     inline short getCount() const{

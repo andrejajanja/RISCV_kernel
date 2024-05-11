@@ -6,6 +6,7 @@
 #define RISCV_KERNEL_PCB_H
 
 #include "../lib/hw.h"
+#include "sem.hpp"
 
 //register name macros, for more ergonomic access
 #define SP 20
@@ -20,16 +21,15 @@ struct ThreadState{
     void* stackEnd; //pointer to the end thread stack
     uint16 timeLeft;
     uint16 waitingFor;
+    SemState* semaphore;
     bool isStarted;
-
-
 };
 typedef ThreadState* thread_t;
 
 class PCB {
 public:
     static ThreadState* createState(void* start_routine, void* arg);
-    static void freeState(ThreadState* state);
+    static int freeState(ThreadState* state);
 
     static bool setJmp(ThreadState* state);
     static void longJmp(ThreadState* state);

@@ -26,11 +26,12 @@ void printType(int number){
 
     if(number < 0){
         __putc('-');
+        number = -number;
     }
 
     int digits[20];
     int digitNum = 0;
-    while(number > 0){
+    while(number != 0){
         digits[digitNum] = number%10;
         number/=10;
         digitNum++;

@@ -9,63 +9,71 @@
 asm(".global endOfProgramLabel;");
 
 void calculateSum(void*){
+    printf("--- FUNCTION STARTED\n");
     size_t sum = 0;
     for (int i = 0; i < 100000000; ++i) {
         size_t a = 10;
         size_t b = 5;
         sum += a/b + a + b;
     }
-    printf("--- Function ended %u. ---\n", sum);
+    printf("-- FUNCTION ENDED %u. ---\n", sum);
+}
+
+void criticalCalculate(void* sem){
+    sem_wait((sem_t)sem);
+    printf("--- Critical calculate started\n");
+    size_t sum = 0;
+    for (int i = 0; i < 100000000; ++i) {
+        size_t a = 10;
+        size_t b = 5;
+        sum += a/b + a + b;
+    }
+
+    printf("-- Critical Function ended %u. ---\n", sum);
+    sem_close((sem_t)sem);
 }
 
 void userMain(void*){
-    printf("Main start\n");
-    thread_t handle[4];
-    for (int i = 0; i < 3; i++) {
-        thread_create(&handle[i], &calculateSum, nullptr);
+    printf("\t\tMain begin\n");
+    sem_t semaphore1;
+    thread_t ts[3];
+    sem_open(&semaphore1, 1);
+    for (int i = 0; i < 2; ++i) {
+        thread_create(&ts[i], &criticalCalculate, semaphore1);
     }
-    thread_sleep(15);
-    printf("Main ended\n");
+
+    calculateSum(nullptr);
+
+    sem_wait(semaphore1);
+    printf("Critical print\n");
+    sem_signal(semaphore1);
+
+    printf("Sem close status: %d\n",sem_close(semaphore1));
+    printf("\t\tMain ended\n");
 }
 
 //Test main
+int main(){
+    printf("'%d'\n", -1);
+    Riscv::stopEmulator();
+    asm("endOfProgramLabel:");
+    return 0;
+}
+
 //int main(){
+//    //system initialize
 //    Riscv::writeStvec((uint64)&ecallWrapper);
 //    MemoryAllocator::initialize();
-//    uint32 begin = MemoryAllocator::print_segments();
+//    Scheduler::initialize();
 //
-//    void* segs[10];
-//    segs[0] = MemoryAllocator::mem_allocate(50);
-//    segs[1] = MemoryAllocator::mem_allocate(10);
-//    segs[2] = MemoryAllocator::mem_allocate(40);
-//    segs[3] = MemoryAllocator::mem_allocate(10);
-//    MemoryAllocator::mem_free(segs[0]);
-//    MemoryAllocator::mem_free(segs[2]);
-//    MemoryAllocator::mem_free(segs[1]);
-//    MemoryAllocator::mem_free(segs[3]);
-//    if(begin != MemoryAllocator::print_segments()){
-//        printf("Some error\n");
-//    }
-//
+//    // - create thread context for main function and start it
+//    thread_create(&PCB::running, &userMain, nullptr);
+//    PCB::threadBegin(PCB::running);
 //    asm("endOfProgramLabel:");
+//
+//    //system cleanup
+//    Scheduler::cleanUp();
+//    //TODO memory allocator cleanup
 //    Riscv::stopEmulator();
 //    return 0;
 //}
-
-int main(){
-    //system initialize
-    Riscv::writeStvec((uint64)&ecallWrapper);
-    MemoryAllocator::initialize();
-    Scheduler::initialize();
-
-    // - create thread context for main function and start it
-    thread_create(&PCB::running, &userMain, nullptr);
-    PCB::threadBegin(PCB::running);
-    asm("endOfProgramLabel:");
-
-    //system cleanup
-    Scheduler::cleanUp();
-    //TODO memory allocator cleanup
-    Riscv::stopEmulator();
-    return 0;
-}
