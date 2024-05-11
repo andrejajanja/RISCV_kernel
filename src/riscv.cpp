@@ -6,21 +6,7 @@
 #include "../h/mem.hpp"
 #include "../h/scheduler.hpp"
 #include "../h/console.hpp"
-
-void Riscv::stopEmulator(){
-//    printf("\n\t-- Shutting down --\n");
-    //defined in project file
-    asm("la t0, 0x100000;" //adress
-        "la t1, 0x5555;" //value
-        "sw t1, 0(t0);");
-}
-
-//TODO finnish wait for hardware interrupt
-void Riscv::waitForHardwareInterrupt() {
-    switchToUserModeH();
-    while(true){}
-    asm("doneWaitingForHardware:");
-}
+asm(".global doneWaitingForHardware;");
 
 void printSystemState(bool memmory, bool threads, bool semaphores){
     printf("\n-- System state (data structures) --\n");
@@ -39,14 +25,21 @@ void sysCallExcepiton(const char* msg){
 }
 
 void hadrwareHandler(){
+    size_t a7 = Riscv::readA7();
+
     //if some other device caused hardware interrupt, shutdown
     if(plic_claim() != CONSOLE_IRQ){
         Riscv::stopEmulator();
     }
-    char st = Riscv::readConsoleStatus();
+
+    Console::status = Riscv::readConsoleStatus();
+    plic_complete(CONSOLE_IRQ);
+
     //TODO add thread change here, to first thread that was waiting for console
-    plic_complete(10);
-    Riscv::writeA0((size_t)st);
+    if(a7 == 76){
+        asm("la t0,doneWaitingForHardware;"
+            "jalr x0, t0;");
+    }
 }
 
 //system calls handlers
@@ -152,7 +145,8 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             break;
 
         case 0x41: //getc
-            retValue = Console::getc();
+            retValue = (uint64)Console::getc();
+            //FIXME there is some bug here when returning a value from this, getc works by itself
             Riscv::writeA0(retValue);
             break;
         case 0x42: //putc

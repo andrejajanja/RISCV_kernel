@@ -7,7 +7,6 @@
 
 #include "../lib/hw.h"
 
-
 class Riscv{
 public:
     //register operations
@@ -93,15 +92,13 @@ public:
 
     static inline void writeConsole(char value){
         asm("mv t0, %1;"
-            "sb %0, 0(t0);": "=r"(value):"r"(CONSOLE_TX_DATA));
+            "sb %0, 0(t0);": :"r"(value),"r"(CONSOLE_RX_DATA));
     }
 
     static inline char readConsole(){
         char value;
         asm("mv t0, %1;"
-            "lb %0, 0(t0);": "=r"(value):"r"(CONSOLE_RX_DATA));
-        return value;
-
+            "lb %0, 0(t0);": "=r"(value):"r"(CONSOLE_TX_DATA));
         return value;
     }
 

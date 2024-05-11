@@ -161,8 +161,9 @@ int sem_trywait(sem_t id){
 char getc(){
     asm("li a0, 0x41;"
         "ecall;");
-    uint64 value = Riscv::readA0();
-    return (char)value;
+    //FIXME when I get here value isn't passed with a0 register, there is some bug
+    char value = (char)Riscv::readA0();
+    return value;
 }
 
 void putc(char c){

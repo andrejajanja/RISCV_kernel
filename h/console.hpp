@@ -10,6 +10,7 @@ const int EOF = -1;
 class Console {
 public:
     static bool initialized;
+    static char status;
 
     static void initialize();
     static void putc(char chr);

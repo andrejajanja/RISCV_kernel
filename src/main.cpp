@@ -55,7 +55,12 @@ void userMain(void*){
 //Test main
 int main(){
     Riscv::writeStvec((uint64)&ecallWrapper);
+    MemoryAllocator::initialize();
     Console::initialize();
+
+    char c = getc();
+    putc(c);
+
     Riscv::stopEmulator();
     asm("endOfProgramLabel:");
     return 0;

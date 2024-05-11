@@ -6,23 +6,11 @@
 #include "../h/riscv.hpp"
 
 bool Console::initialized = false;
+char Console::status = 0;
 
 void Console::initialize() {
-
-    //TODO rewrite this part, to more efficiently wait for hardware interrupt
-    asm("li t0, 512;" //only hardware interrupts are masked
-        "csrw sie, t0;"
-        "li t0, 0x22;" //this makes system mode responed to masked interrupts
-        "csrw sstatus, t0;");
-    uint64 temp = 0xFF;
-    while(temp >= 0xFF){
-        temp = Riscv::readA0();
-    }
-    asm("li t0, 0;"
-        "csrw sie, t0;"); //blocking software and hardware interrupts
-        //-- up to this part ------
-
-    if(temp & CONSOLE_TX_STATUS_BIT){
+    Riscv::waitForHardwareInterrupt();
+    if(status & CONSOLE_TX_STATUS_BIT){
         initialized = true;
     }else{
         //failed to initialize console, shut down;
@@ -30,10 +18,18 @@ void Console::initialize() {
     }
 }
 
+
+//FIXME this doesn't work as a system call
 char Console::getc() {
-    return '0';
+    while(true){
+        if(status & CONSOLE_RX_STATUS_BIT){
+            return Riscv::readConsole();
+        }
+        Riscv::waitForHardwareInterrupt();
+    }
 }
 
+//TODO can I always print to console? - I assumed yes
 void Console::putc(char chr) {
-
+    Riscv::writeConsole(chr);
 }

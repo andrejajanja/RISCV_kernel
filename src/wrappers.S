@@ -6,17 +6,21 @@
 .global _ZN5Riscv16waitForNextTimerEv
 .global _ZN5Riscv16switchToUserModeEv
 .global _ZN5Riscv17switchToUserModeHEv
+.global _ZN5Riscv24waitForHardwareInterruptEv
+.global doneWaitingForHardware
+.global _ZN5Riscv12stopEmulatorEv
 
 .align 4
 .type _Z12ecallWrapperv, @function
 _Z12ecallWrapperv:
-    #check if system was just waiting for timer interrupt
-    li t0, 77
+    li t0, 76 #check if system was just waiting for hardware interrupt
+    beq a7, t0, just_hardware_interrupt
+    li t0, 77 #check if system was just waiting for timer interrupt
     beq a7, t0, just_timer_interrupt
 
     #save user context to stack
     addi sp, sp, -256
-    .irp index, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+    .irp index, 1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
     sd x\index, \index * 8(sp)
     .endr
 
@@ -30,6 +34,14 @@ _Z12ecallWrapperv:
     sret
 just_timer_interrupt:
     call _Z12timerHandlerv
+just_hardware_interrupt:
+    call _Z15hadrwareHandlerv
+
+.type _ZN5Riscv12stopEmulatorEv, @function
+_ZN5Riscv12stopEmulatorEv:
+    la t0, 0x100000
+    la t1, 0x5555
+    sw t1, 0(t0)
 
 .type _ZN3PCB6setJmpEP11ThreadState, @function
 _ZN3PCB6setJmpEP11ThreadState:
@@ -138,6 +150,7 @@ _ZN3PCB21threadCompleteSysCallEv:
 
 .type _ZN5Riscv16waitForNextTimerEv, @function
 _ZN5Riscv16waitForNextTimerEv:
+#TODO make it so the value of a7 is stored on stack somehow, like in hardwareWait
     li a7, 77
     call _ZN5Riscv16switchToUserModeEv
     j _ZN5Riscv16waitForNextTimerEv+8
@@ -163,3 +176,23 @@ _ZN5Riscv17switchToUserModeHEv:
     mv t0, ra
     csrw sepc, t0
     sret
+
+.type _ZN5Riscv24waitForHardwareInterruptEv, @function
+_ZN5Riscv24waitForHardwareInterruptEv:
+    addi sp, sp, -32
+    sd a7, 16(sp)
+    sd ra, 8(sp)
+    sd s0, 0(sp)
+    addi s0, sp, 32
+
+    li a7, 76
+
+    call _ZN5Riscv17switchToUserModeHEv
+L:  j L
+doneWaitingForHardware:
+    addi sp, sp, 32 #return stack to pre-hardwareHandler state
+    ld a7, 16(sp)
+    ld ra, 8(sp)
+    ld s0, 0(sp)
+    addi sp, sp, 32
+    ret

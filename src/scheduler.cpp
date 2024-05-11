@@ -104,14 +104,12 @@ bool Scheduler::hasBlockedThreads() {
     return (blocked->getCount() == 0)? false : true;
 }
 
-//TODO check for bugs
 void Scheduler::blockRunning(){
     ThreadState* tsTemp = pool->removeLast();
     blocked->appendBack(tsTemp);
     PCB::dispatch_sync();
 }
 
-//TODO check for bugs
 void Scheduler::unblockThread(ThreadState* ts) {
     blocked->remove(ts);
     pool->insertBeforeLast(ts);
