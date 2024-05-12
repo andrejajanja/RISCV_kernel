@@ -134,7 +134,8 @@ public:
 
 
     static void switchToUserMode();
-    static void switchToUserModeH();
+    static void waitingHardware();
+    static void waitingSoftware();
     static void waitForNextTimer();
     static void waitForHardwareInterrupt();
     static void stopEmulator();
