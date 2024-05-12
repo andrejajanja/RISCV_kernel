@@ -9,6 +9,7 @@
 SysList<ThreadState*>* Scheduler::pool = nullptr;
 SysList<ThreadState*>* Scheduler::sleeping = nullptr;
 SysList<ThreadState*>* Scheduler::blocked = nullptr;
+SysList<ThreadState*>* Scheduler::waitingHardware = nullptr;
 
 bool Scheduler::wokedUp = false;
 
@@ -16,12 +17,14 @@ void Scheduler::initialize() {
     pool = new SysList<ThreadState*>();
     sleeping = new SysList<ThreadState*>();
     blocked = new SysList<ThreadState*>();
+    waitingHardware = new SysList<ThreadState*>();
 }
 
 void Scheduler::cleanUp() {
     delete pool;
     delete sleeping;
     delete blocked;
+    delete waitingHardware;
 }
 
 uint32 threadPrintCounter = 0;
@@ -135,5 +138,19 @@ void Scheduler::deleteBlockedForSem(SemState *semSt) {
             blocked->remove(tempState);
         }
     }
+}
+
+void Scheduler::runningHArdwareWait() {
+    ThreadState* ts = pool->removeLast();
+    waitingHardware->appendFront(ts);
+}
+
+void Scheduler::removeHardwareWait() {
+    ThreadState* ts = waitingHardware->removeBack();
+    pool->insertBeforeLast(ts);
+}
+
+bool Scheduler::hasWaitingHArdware() {
+    return !(waitingHardware->getCount() == 0);
 }
 

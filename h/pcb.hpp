@@ -23,6 +23,7 @@ struct ThreadState{
     uint16 waitingFor;
     SemState* semaphore;
     bool isStarted;
+    bool waitingForHardware;
 };
 typedef ThreadState* thread_t;
 

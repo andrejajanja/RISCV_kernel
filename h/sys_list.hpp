@@ -50,8 +50,8 @@ public:
     void insertBeforeLast(T data);
 
     void remove(T data);
-    void removeFront();
-    void removeBack();
+    T removeFront();
+    T removeBack();
     T removeLast();
 
     T next();

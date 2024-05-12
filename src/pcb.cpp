@@ -31,6 +31,8 @@ ThreadState* PCB::createState(void* start_routine, void* arg){
     ptr->timeLeft = DEFAULT_TIME_SLICE;
     ptr->semaphore = nullptr;
     ptr->isStarted = false;
+    ptr->waitingForHardware = false;
+
     return ptr;
 }
 
@@ -39,11 +41,16 @@ int PCB::freeState(ThreadState* state){
 }
 
 void PCB::dispatch_sync() {
+    if(PCB::running->waitingForHardware){
+        Scheduler::runningHArdwareWait();
+    }
+
     if(Scheduler::hasOnlySleepingThreads()){
         if(setJmp(PCB::running) == 0){
             Riscv::waitForNextTimer();
         }
     }
+
     ThreadState* oldT = PCB::running;
     PCB::running = Scheduler::get();
     if(oldT == PCB::running) return;

@@ -20,7 +20,7 @@ _Z12ecallWrapperv:
 
     #save user context to stack
     addi sp, sp, -256
-    .irp index, 1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+    .irp index, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
     sd x\index, \index * 8(sp)
     .endr
 
@@ -160,7 +160,7 @@ _ZN5Riscv16switchToUserModeEv:
     li t0, 0
     csrw sstatus, t0
     csrw sip, t0 #SIP = 0 for marking software interrupt resolved
-    li t0, 2
+    li t0, 514
     csrw sie, t0 #SIE = 2 for allowing only software interrupts
     mv t0, ra
     csrw sepc, t0
@@ -179,11 +179,11 @@ _ZN5Riscv17switchToUserModeHEv:
 
 .type _ZN5Riscv24waitForHardwareInterruptEv, @function
 _ZN5Riscv24waitForHardwareInterruptEv:
-    addi sp, sp, -32
-    sd a7, 16(sp)
-    sd ra, 8(sp)
-    sd s0, 0(sp)
-    addi s0, sp, 32
+    #put all registers on stack
+    addi sp, sp, -256
+    .irp index, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+    sd x\index, \index * 8(sp)
+    .endr
 
     li a7, 76
 
@@ -191,8 +191,13 @@ _ZN5Riscv24waitForHardwareInterruptEv:
 L:  j L
 doneWaitingForHardware:
     addi sp, sp, 32 #return stack to pre-hardwareHandler state
-    ld a7, 16(sp)
-    ld ra, 8(sp)
-    ld s0, 0(sp)
-    addi sp, sp, 32
+
+    csrr t0, sie
+    addi t0, t0, 2
+    csrw sie, t0
+    # pop all registers from stack
+    .irp index, 1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+    ld x\index, \index * 8(sp)
+    .endr
+    addi sp, sp, 256
     ret

@@ -8,6 +8,10 @@
 #include "../h/console.hpp"
 asm(".global doneWaitingForHardware;");
 
+size_t Riscv::hardwareNum = 0;
+size_t Riscv::timerNum = 0;
+bool Riscv::anotherInterrupt = false;
+
 void printSystemState(bool memmory, bool threads, bool semaphores){
     printf("\n-- System state (data structures) --\n");
     if(memmory){
@@ -24,30 +28,39 @@ void sysCallExcepiton(const char* msg){
     Riscv::stopEmulator();
 }
 
+
 void hadrwareHandler(){
     size_t a7 = Riscv::readA7();
+    size_t a0 = Riscv::readA0();
 
     //if some other device caused hardware interrupt, shutdown
     if(plic_claim() != CONSOLE_IRQ){
         Riscv::stopEmulator();
     }
 
-    Console::status = Riscv::readConsoleStatus();
+    SysConsole::status = Riscv::readConsoleStatus();
     plic_complete(CONSOLE_IRQ);
-
     //TODO add thread change here, to first thread that was waiting for console
     if(a7 == 76){
         asm("la t0,doneWaitingForHardware;"
             "jalr x0, t0;");
     }
+
+    if(!Riscv::anotherInterrupt && SysConsole::status & CONSOLE_RX_STATUS_BIT){
+        Riscv::hardwareNum++;
+        char key = Riscv::readConsole();
+        key++;
+        Riscv::anotherInterrupt = true;
+    }else{
+        Riscv::anotherInterrupt = false;
+    }
+    Riscv::writeA0(a0);
 }
 
 //system calls handlers
-
-size_t timerNum = 0;
 void timerHandler(){
     asm volatile("li a7, 0;");
-    //printf("TS %u\n", timerNum++); //optional print
+    //printf("TS %u\n", Riscv::timerNum++); //optional print
 
     //async dispatch
     Scheduler::decrementSleeping();
@@ -111,7 +124,7 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
 
         case 0x21: //sem_create
             retValue = arg1;
-            semSt = SEM::constructSem(arg2);
+            semSt = SEM::constructSem((int)arg2);
             *((uint64*)retValue) = (uint64)semSt;
             Riscv::writeA0(0);
             break;
@@ -144,13 +157,17 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             }
             break;
 
+
+//            PCB::running->waitingForHardware = true;
+//            PCB::dispatch_sync();
         case 0x41: //getc
-            retValue = (uint64)Console::getc();
-            //FIXME there is some bug here when returning a value from this, getc works by itself
+        //TODO finnish implementation of getc
+            retValue = (uint64)SysConsole::getc();
             Riscv::writeA0(retValue);
             break;
         case 0x42: //putc
-            Console::putc((char)arg1);
+        //TODO add waiting If it cant print immediately
+            SysConsole::putc((char)arg1);
             break;
 
         case 0x50: //exception handler
@@ -161,7 +178,7 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             printf("OS DETECTED ERROR: Unhandled opCode value for system call: '%u'\n", opCode);
             Riscv::stopEmulator();
             break;
-    };
+    }
 }
 
 void ecallHandler(){

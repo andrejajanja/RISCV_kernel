@@ -9,6 +9,11 @@
 
 class Riscv{
 public:
+
+    static size_t hardwareNum;
+    static size_t timerNum;
+    static bool anotherInterrupt;
+
     //register operations
     //read ops
     static inline uint64 readStvec(){

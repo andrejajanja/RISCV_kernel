@@ -164,8 +164,9 @@ void SysList<T>::insertBeforeLast(T data){
 }
 
 template<typename T>
-void SysList<T>::removeFront(){
-    if(count == 0) return;
+T SysList<T>::removeFront(){
+    if(count == 0) return 0;
+    T tempData = listHead->data;
     if(count == 1){
         destructElement(listHead);
         listHead = nullptr;
@@ -178,12 +179,14 @@ void SysList<T>::removeFront(){
         destructElement(temp);
     }
     count--;
+    return tempData;
 }
 
 template<typename T>
-void SysList<T>::removeBack(){
-    if(count == 0) return;
+T SysList<T>::removeBack(){
+    if(count == 0) return 0;
 
+    T tempData = listBack->data;
     if(count == 1){
         destructElement(listHead);
         listHead = nullptr;
@@ -196,6 +199,7 @@ void SysList<T>::removeBack(){
         destructElement(temp);
     }
     count--;
+    return tempData;
 }
 
 template<typename T>

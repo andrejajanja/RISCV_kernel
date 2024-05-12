@@ -5,10 +5,11 @@
 #include "../h/console.hpp"
 #include "../h/riscv.hpp"
 
-bool Console::initialized = false;
-char Console::status = 0;
+bool SysConsole::initialized = false;
+char SysConsole::status = 0;
+bool SysConsole::waiting = false;
 
-void Console::initialize() {
+void SysConsole::initialize() {
     Riscv::waitForHardwareInterrupt();
     if(status & CONSOLE_TX_STATUS_BIT){
         initialized = true;
@@ -18,18 +19,26 @@ void Console::initialize() {
     }
 }
 
-
-//FIXME this doesn't work as a system call
-char Console::getc() {
+char SysConsole::getc() {
     while(true){
         if(status & CONSOLE_RX_STATUS_BIT){
-            return Riscv::readConsole();
+            char temp = Riscv::readConsole();
+            Riscv::waitForHardwareInterrupt();
+            return temp;
         }
         Riscv::waitForHardwareInterrupt();
     }
 }
 
 //TODO can I always print to console? - I assumed yes
-void Console::putc(char chr) {
+void SysConsole::putc(char chr) {
     Riscv::writeConsole(chr);
+    Riscv::waitForHardwareInterrupt();
+//    while(true){
+//        if(status & CONSOLE_TX_STATUS_BIT){
+//            Riscv::writeConsole(chr);
+//            break;
+//        }
+//        Riscv::waitForHardwareInterrupt();
+//    }
 }

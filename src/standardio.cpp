@@ -85,7 +85,7 @@ void printType(bool cond){
 
 //printf - implemented to work in the same way as printf from stdio.h
 void printf(const char* str, ...){
-    //... are registers a1 to a7
+    //'...' are registers a1 to a7
     uint8 arg_cnt = 0;
     //TODO find a way to put all these arguments on the stack, insted of like this, it looks ugly.
     uint64 arg_val[7] = {
@@ -112,7 +112,7 @@ void printf(const char* str, ...){
                     printType((const char*)arg_val[arg_cnt]);
                     break;
                 case 'c': //just char
-                    printType((char)arg_val[arg_cnt]);
+                    putc((char)(arg_val[arg_cnt]));
                     break;
                 case 'u': //unsigned number - uint64
                     printType(arg_val[arg_cnt]);

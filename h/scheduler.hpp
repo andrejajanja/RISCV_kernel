@@ -22,21 +22,29 @@ public:
     static void remove(ThreadState* ts);
     static void removeRunning();
 
+    //timer handling
     static void putRunningToSleep(uint16);
     static void decrementSleeping();
     static bool hasOnlySleepingThreads();
 
+    //semaphores
     static bool hasBlockedThreads();
     static void blockRunning();
     static void unblockThread(ThreadState*);
     static void unblockOneForSem(SemState* sem);
     static void deleteBlockedForSem(SemState* sem);
 
+    //hardware interrupts
+    static void runningHArdwareWait();
+    static void removeHardwareWait();
+    static bool hasWaitingHArdware();
+
     static bool wokedUp;
 private:
     static SysList<ThreadState*>* pool;
     static SysList<ThreadState*>* sleeping;
     static SysList<ThreadState*>* blocked;
+    static SysList<ThreadState*>* waitingHardware;
 };
 
 
