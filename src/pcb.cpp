@@ -6,6 +6,7 @@
 #include "../h/mem.hpp"
 #include "../h/riscv.hpp"
 #include "../h/scheduler.hpp"
+#include "../h/console.hpp"
 
 thread_t PCB::running = nullptr;
 
@@ -31,7 +32,6 @@ ThreadState* PCB::createState(void* start_routine, void* arg){
     ptr->timeLeft = DEFAULT_TIME_SLICE;
     ptr->semaphore = nullptr;
     ptr->isStarted = false;
-    ptr->waitingForHardware = false;
 
     return ptr;
 }
@@ -41,10 +41,6 @@ int PCB::freeState(ThreadState* state){
 }
 
 void PCB::dispatch_sync() {
-    if(PCB::running->waitingForHardware){
-        Scheduler::runningHArdwareWait();
-    }
-
     if(Scheduler::hasOnlySleepingThreads()){
         if(setJmp(PCB::running) == 0){
             Riscv::waitForNextTimer();
@@ -70,22 +66,28 @@ void PCB::yield(ThreadState* oldT, ThreadState* newT) {
 void PCB::threadBegin(ThreadState *state) {
     state->isStarted = true;
     //before every thread start there is switch to user mode procedure
-    Riscv::switchToUserMode();
     PCB::threadStart(state);
 }
 
 void PCB::threadComplete() {
     Scheduler::removeRunning();
 
-    if(Scheduler::hasOnlySleepingThreads()){
-        Riscv::waitForNextTimer();
-    }
-
-    if(Scheduler::threadCount() == 0){
+    if(!Scheduler::hasAnyThreads()){
         //jumping to the end of the program
         asm("la t0, endOfProgramLabel;"
             "jalr x0, t0;");
     }
+
+    if(Scheduler::hasOnlySleepingThreads()){
+        Riscv::waitForNextTimer();
+    }
+
+    if(Scheduler::hasOnlyWaitingHArdware()){
+        SysConsole::readSent = true;
+        Riscv::waitForHardwareInterrupt(Riscv::WITH_SIE_CHANGE);
+        Scheduler::removeOneHardwareWait();
+    }
+
 
     PCB::running = Scheduler::get();
 

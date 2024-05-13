@@ -132,12 +132,16 @@ public:
         asm("csrw scause, %0;": "=r"(value));
     }
 
+    enum{
+        WITHOUT_SIE_CHANGE = 10,
+        WITH_SIE_CHANGE = 20
+    };
 
     static void switchToUserMode();
     static void waitingHardware();
     static void waitingSoftware();
     static void waitForNextTimer();
-    static void waitForHardwareInterrupt();
+    static void waitForHardwareInterrupt(size_t);
     static void stopEmulator();
     static void initializeSystem();
     static void shutdownSystem();

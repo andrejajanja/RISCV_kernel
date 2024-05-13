@@ -14,7 +14,9 @@ public:
     static void initialize();
     static void cleanUp();
     static void printThreads();
-    static uint16 threadCount();
+    static bool hasAnyThreads();
+    static bool hasJustOneActive();
+    static bool hasActiveThreads();
 
     static void put(ThreadState* ts);
     static ThreadState* get();
@@ -26,6 +28,8 @@ public:
     static void putRunningToSleep(uint16);
     static void decrementSleeping();
     static bool hasOnlySleepingThreads();
+    static bool hasSleepingThreads();
+    static bool waitingHardwareAndWakeup();
 
     //semaphores
     static bool hasBlockedThreads();
@@ -36,11 +40,11 @@ public:
 
     //hardware interrupts
     static void runningHArdwareWait();
-    static void removeHardwareWait();
+    static ThreadState* removeOneHardwareWait();
+    static bool hasOnlyWaitingHArdware();
     static bool hasWaitingHArdware();
 
     static bool wokedUp;
-private:
     static SysList<ThreadState*>* pool;
     static SysList<ThreadState*>* sleeping;
     static SysList<ThreadState*>* blocked;

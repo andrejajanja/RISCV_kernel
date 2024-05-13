@@ -7,10 +7,11 @@
 
 bool SysConsole::initialized = false;
 char SysConsole::status = 0;
-bool SysConsole::waiting = false;
+bool SysConsole::readSent = false;
+char SysConsole::arr[] = "  ";
 
 void SysConsole::initialize() {
-    Riscv::waitForHardwareInterrupt();
+    Riscv::waitForHardwareInterrupt(Riscv::WITHOUT_SIE_CHANGE);
     if(status & CONSOLE_TX_STATUS_BIT){
         initialized = true;
     }else{
@@ -19,26 +20,9 @@ void SysConsole::initialize() {
     }
 }
 
-char SysConsole::getc() {
-    while(true){
-        if(status & CONSOLE_RX_STATUS_BIT){
-            char temp = Riscv::readConsole();
-            Riscv::waitForHardwareInterrupt();
-            return temp;
-        }
-        Riscv::waitForHardwareInterrupt();
-    }
-}
-
 //TODO can I always print to console? - I assumed yes
 void SysConsole::putc(char chr) {
     Riscv::writeConsole(chr);
-    Riscv::waitForHardwareInterrupt();
-//    while(true){
-//        if(status & CONSOLE_TX_STATUS_BIT){
-//            Riscv::writeConsole(chr);
-//            break;
-//        }
-//        Riscv::waitForHardwareInterrupt();
-//    }
+    readSent = false;
+    Riscv::waitForHardwareInterrupt(Riscv::WITH_SIE_CHANGE);
 }

@@ -71,7 +71,7 @@ public:
         return count;
     }
 
-private:
+//private:
     inline void checkIndex(short  index) const{
         if(count == 0) Exception("List is empty, thus no element can be accessed");
         if(index < 0 || index > this->count) Exception("List index out of range");

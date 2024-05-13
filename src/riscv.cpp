@@ -28,7 +28,7 @@ void sysCallExcepiton(const char* msg){
     Riscv::stopEmulator();
 }
 
-
+//Mangled name: _Z15hadrwareHandlerv
 void hadrwareHandler(){
     size_t a7 = Riscv::readA7();
     size_t a0 = Riscv::readA0();
@@ -40,19 +40,25 @@ void hadrwareHandler(){
 
     SysConsole::status = Riscv::readConsoleStatus();
     plic_complete(CONSOLE_IRQ);
-    //TODO add thread change here, to first thread that was waiting for console
+
     if(a7 == 76){
+        if(SysConsole::readSent){
+            SysConsole::arr[0] = Riscv::readConsole();
+        }
         asm("la t0,doneWaitingForHardware;"
             "jalr x0, t0;");
     }
 
-    if(!Riscv::anotherInterrupt && SysConsole::status & CONSOLE_RX_STATUS_BIT){
-        Riscv::hardwareNum++;
-        char key = Riscv::readConsole();
-        key++;
-        Riscv::anotherInterrupt = true;
-    }else{
-        Riscv::anotherInterrupt = false;
+    if(SysConsole::status & CONSOLE_RX_STATUS_BIT){
+        if(Scheduler::hasWaitingHArdware()){
+            SysConsole::arr[0] = Riscv::readConsole();
+            ThreadState* oldTs = PCB::running;
+            PCB::running = Scheduler::removeOneHardwareWait();
+            PCB::yield(oldTs, PCB::running);
+        }else {
+            SysConsole::arr[1] = Riscv::readConsole();
+            Riscv::hardwareNum++;
+        }
     }
     Riscv::writeA0(a0);
 }
@@ -60,12 +66,17 @@ void hadrwareHandler(){
 //system calls handlers
 void timerHandler(){
     asm volatile("li a7, 0;");
-    //printf("TS %u\n", Riscv::timerNum++); //optional print
+    //Riscv::timerNum++;
 
     //async dispatch
+    //TODO Integrate sleeping threads to handle interrupt
     Scheduler::decrementSleeping();
     if(Scheduler::hasOnlySleepingThreads()){
         Riscv::waitForNextTimer();
+    }
+
+    if(Scheduler::waitingHardwareAndWakeup()){
+        return;
     }
 
     if(Scheduler::wokedUp){
@@ -156,17 +167,21 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
                 Riscv::writeA0((uint64)1);
             }
             break;
-
-
-//            PCB::running->waitingForHardware = true;
-//            PCB::dispatch_sync();
         case 0x41: //getc
-        //TODO finnish implementation of getc
-            retValue = (uint64)SysConsole::getc();
+            if(Scheduler::hasJustOneActive()){
+                if(Scheduler::hasSleepingThreads()){
+                    //TODO case if there are sleeping threads and only active thread needs to wait for hardware interrupt
+                }
+                SysConsole::readSent = true;
+                Riscv::waitForHardwareInterrupt(Riscv::WITH_SIE_CHANGE);
+            }else{
+                Scheduler::runningHArdwareWait();
+                PCB::dispatch_sync();
+            }
+            retValue = SysConsole::arr[0];
             Riscv::writeA0(retValue);
             break;
         case 0x42: //putc
-        //TODO add waiting If it cant print immediately
             SysConsole::putc((char)arg1);
             break;
 
@@ -193,15 +208,17 @@ void ecallHandler(){
     switch (scause) {
         case 0x8000000000000001UL: //timer as software interrupt
             timerHandler();
-            asm("csrr t0, sip;"
-                "add t0, t0, -1;"
+            asm("li t0, 514;"
+                "csrw sie, t0;"
+                "csrr t0, sip;"
+                "andi t0, t0, 0xFFFFFFFFFFFFFFFD;"
                 "csrw sip, t0;"); //marking software interrupt resolved
             break;
         case 0x0000000000000008UL: //software interrupt handle
         case 0x0000000000000009UL:
             systemCallHandler(a0, a1, a2, a3);
             asm("csrr t0, sip;"
-                "add t0, t0, -1;"
+                "andi t0, t0, 0xFFFFFFFFFFFFFFFD;"
                 "csrw sip, t0;"); //marking software interrupt resolved
             break;
         case 0x0000000000000002UL:

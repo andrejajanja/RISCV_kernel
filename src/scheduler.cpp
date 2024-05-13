@@ -56,8 +56,8 @@ void Scheduler::printThreads(){
     printf("--- End thread state ---\n\n");
 }
 
-uint16 Scheduler::threadCount(){
-    return pool->getCount();
+bool Scheduler::hasAnyThreads(){
+    return (pool->getCount() != 0 || blocked->getCount() != 0 || waitingHardware->getCount() != 0 );
 }
 
 void Scheduler::put(ThreadState *ts) {
@@ -100,7 +100,7 @@ void Scheduler::decrementSleeping() {
 }
 
 bool Scheduler::hasOnlySleepingThreads() {
-    return (sleeping->getCount() > 0 && pool->getCount() == 0);
+    return (sleeping->getCount() != 0 && pool->getCount() == 0 && waitingHardware->getCount() == 0);
 }
 
 bool Scheduler::hasBlockedThreads() {
@@ -145,12 +145,34 @@ void Scheduler::runningHArdwareWait() {
     waitingHardware->appendFront(ts);
 }
 
-void Scheduler::removeHardwareWait() {
+ThreadState* Scheduler::removeOneHardwareWait() {
     ThreadState* ts = waitingHardware->removeBack();
     pool->insertBeforeLast(ts);
+    pool->previous(); //Za cije babe zdravlje je ovo falilo
+    return ts;
+}
+
+bool Scheduler::hasOnlyWaitingHArdware() {
+    return (waitingHardware->getCount() != 0 && pool->getCount() == 0 && blocked->getCount() == 0);
 }
 
 bool Scheduler::hasWaitingHArdware() {
-    return !(waitingHardware->getCount() == 0);
+    return waitingHardware->getCount() != 0;
+}
+
+bool Scheduler::hasJustOneActive() {
+    return (pool->getCount() == 1 && blocked->getCount() == 0 && waitingHardware->getCount() == 0);
+}
+
+bool Scheduler::hasSleepingThreads() {
+    return sleeping->getCount() != 0;
+}
+
+bool Scheduler::hasActiveThreads() {
+    return pool->getCount() != 0;
+}
+
+bool Scheduler::waitingHardwareAndWakeup() {
+    return (sleeping->getCount() != 0 && waitingHardware->getCount() != 0 && pool->getCount() == 0);
 }
 

@@ -11,7 +11,8 @@ class SysConsole {
 public:
     static bool initialized;
     static char status;
-    static bool waiting;
+    static bool readSent;
+    static char arr[];
 
     static void initialize();
     static void putc(char chr);

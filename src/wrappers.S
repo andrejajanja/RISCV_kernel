@@ -6,7 +6,7 @@
 .global _ZN5Riscv16waitForNextTimerEv
 .global _ZN5Riscv16switchToUserModeEv
 .global _ZN5Riscv17switchToUserModeHEv
-.global _ZN5Riscv24waitForHardwareInterruptEv
+.global _ZN5Riscv24waitForHardwareInterruptEm
 .global doneWaitingForHardware
 .global _ZN5Riscv12stopEmulatorEv
 
@@ -33,6 +33,8 @@ _Z12ecallWrapperv:
     addi sp, sp, 256
     sret
 just_timer_interrupt:
+    li t0,514
+    csrw sie, t0
     call _Z12timerHandlerv
 just_hardware_interrupt:
     call _Z15hadrwareHandlerv
@@ -105,7 +107,7 @@ _ZN3PCB7longJmpEP11ThreadState:
     #restoring system context
     ld t1,184(a0)
     csrw sepc,t1
-    ld t1,192(a0)
+    li t1,0
     csrw sstatus,t1
     ld t1, 200(a0)
     csrw scause,t1
@@ -138,10 +140,17 @@ _ZN3PCB11threadStartEP11ThreadState:
     #writing to sp, ra
     ld sp,160(a0)
     ld ra,168(a0)
+    #implicityly switching to user mode
     ld t0,176(a0) #writing pc for function start
+    csrw sepc, t0
     ld a0,0(a0) #loading thread function argument void* arg
+    li t0, 0
+    csrw sstatus, t0
+    csrw sip, t0 #SIP = 0 for marking software interrupt resolved
+    li t0, 514
+    csrw sie, t0 #SIE = 1000000010 for allowing software and hardware interrupts
     #jumping to thread function
-    jalr zero, t0
+    sret
 
 .type _ZN3PCB21threadCompleteSysCallEv, @function
 _ZN3PCB21threadCompleteSysCallEv:
@@ -187,8 +196,8 @@ _ZN5Riscv15waitingSoftwareEv:
     csrw sepc, t0
     sret
 
-.type _ZN5Riscv24waitForHardwareInterruptEv, @function
-_ZN5Riscv24waitForHardwareInterruptEv:
+.type _ZN5Riscv24waitForHardwareInterruptEm, @function
+_ZN5Riscv24waitForHardwareInterruptEm:
     #put all registers on stack
     addi sp, sp, -256
     .irp index, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
@@ -200,13 +209,14 @@ _ZN5Riscv24waitForHardwareInterruptEv:
     call _ZN5Riscv15waitingHardwareEv
 L:  j L
 doneWaitingForHardware:
-    addi sp, sp, 32 #return stack to pre-hardwareHandler state
-
-    li t0, 514
-    csrw sie, t0
+    addi sp, sp, 48 #return stack to pre-hardwareHandler state
     # pop all registers from stack
-    .irp index, 1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+    .irp index, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
     ld x\index, \index * 8(sp)
     .endr
     addi sp, sp, 256
-    ret
+    li t0, 20
+    bne a0,t0, endHardwareWait
+    li t0, 514
+    csrw sie, t0
+endHardwareWait:    ret

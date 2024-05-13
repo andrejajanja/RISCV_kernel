@@ -36,26 +36,26 @@ void calculateSum(void*){
 void userMain(void*){
     printf("\t\tMain begin\n");
     thread_t ts[3];
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 2; ++i) {
         thread_create(&ts[i], &calculateSum, nullptr);
     }
 
+    while(true){
+        char c = getc();
+        if(c == '\r') {
+            putc('\n');
+            break;
+        }
+        putc(c);
+    }
+
 //    char c = getc();
-//    if( c == 'k'){
-//        printf("K KEY PRESSED\n");
-//    }
+//    putc(c);
     printf("\t\tMain ended\n");
 }
 
 //void userMain(void*){
-//    while(true){
-//        char c = getc();
-//        if(c == '\r') {
-//            putc('\n');
-//            break;
-//        }
-//        putc(c);
-//    }
+
 //}
 
 //Test main
@@ -69,21 +69,21 @@ void userMain(void*){
 //    return 0;
 //}
 
+//FIXME there is a bug when typing input before main starts
 int main(){
     //system initialize
     Riscv::writeStvec((uint64)&ecallWrapper);
-    SysConsole::initialize();
     MemoryAllocator::initialize();
     Scheduler::initialize();
-
     // - create thread context for main function and start it
     thread_create(&PCB::running, &userMain, nullptr);
+    SysConsole::initialize();
     PCB::threadBegin(PCB::running);
     asm("endOfProgramLabel:");
 
     //system cleanup
     Scheduler::cleanUp();
-    printf("Number of keys pressd: %u\n", Riscv::hardwareNum);
+    //printf("Number of keys pressd: %u\nTimer signals: %u\n", Riscv::hardwareNum, Riscv::timerNum);
     //TODO memory allocator cleanup
     Riscv::stopEmulator();
     return 0;
