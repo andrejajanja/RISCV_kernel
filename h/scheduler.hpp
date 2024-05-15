@@ -25,7 +25,7 @@ public:
     static void removeRunning();
 
     //timer handling
-    static void putRunningToSleep(uint16);
+    static void putRunningToSleep(time_t timeout);
     static void decrementSleeping();
     static bool hasOnlySleepingThreads();
     static bool hasSleepingThreads();
@@ -37,18 +37,30 @@ public:
     static void unblockThread(ThreadState*);
     static void unblockOneForSem(SemState* sem);
     static void deleteBlockedForSem(SemState* sem);
+    static void blockAndSleepRunning(time_t timeout);
 
     //hardware interrupts
     static void runningHArdwareWait();
     static ThreadState* removeOneHardwareWait();
     static bool hasOnlyWaitingHArdware();
     static bool hasWaitingHArdware();
+    inline static bool isWaiting(){
+        return waiting;
+    }
+
+    //waiting thread
+    static void prepairWait(uint8 mode);
+    static void endWait(uint8 mode);
 
     static bool wokedUp;
+//private:
     static SysList<ThreadState*>* pool;
     static SysList<ThreadState*>* sleeping;
     static SysList<ThreadState*>* blocked;
     static SysList<ThreadState*>* waitingHardware;
+
+    static ThreadState* waiter;
+    static bool waiting;
 };
 
 

@@ -40,7 +40,12 @@ void SEM::semWait(SemState* handle) {
     Scheduler::blockRunning();
 }
 
-//TODO Finnish timedWait
 void SEM::semTimedWait(sem_t handle, time_t timeout) {
-
+    if(handle->state > 0){
+        handle->state--;
+        return;
+    }
+    handle->state--;
+    PCB::running->semaphore = handle;
+    Scheduler::blockAndSleepRunning(timeout);
 }

@@ -10,7 +10,7 @@ asm(".global doneWaitingForHardware;");
 
 size_t Riscv::hardwareNum = 0;
 size_t Riscv::timerNum = 0;
-bool Riscv::anotherInterrupt = false;
+uint8 Riscv::interruptStatus = 3;
 
 void printSystemState(bool memmory, bool threads, bool semaphores){
     printf("\n-- System state (data structures) --\n");
@@ -30,7 +30,6 @@ void sysCallExcepiton(const char* msg){
 
 //Mangled name: _Z15hadrwareHandlerv
 void hadrwareHandler(){
-    size_t a7 = Riscv::readA7();
     size_t a0 = Riscv::readA0();
 
     //if some other device caused hardware interrupt, shutdown
@@ -41,54 +40,46 @@ void hadrwareHandler(){
     SysConsole::status = Riscv::readConsoleStatus();
     plic_complete(CONSOLE_IRQ);
 
-    if(a7 == 76){
-        if(SysConsole::readSent){
-            SysConsole::arr[0] = Riscv::readConsole();
-        }
-        asm("la t0,doneWaitingForHardware;"
-            "jalr x0, t0;");
-    }
-
     if(SysConsole::status & CONSOLE_RX_STATUS_BIT){
         if(Scheduler::hasWaitingHArdware()){
             SysConsole::arr[0] = Riscv::readConsole();
-            ThreadState* oldTs = PCB::running;
-            PCB::running = Scheduler::removeOneHardwareWait();
-            PCB::yield(oldTs, PCB::running);
+            if(Scheduler::isWaiting()){
+                Scheduler::endWait(Riscv::USER_MODE);
+                PCB::running = Scheduler::removeOneHardwareWait();
+                PCB::longJmp(PCB::running);
+            }else{
+                ThreadState* oldTs = PCB::running;
+                PCB::running = Scheduler::removeOneHardwareWait();
+                PCB::yield(oldTs, PCB::running);
+            }
         }else {
             SysConsole::arr[1] = Riscv::readConsole();
             Riscv::hardwareNum++;
         }
     }
     Riscv::writeA0(a0);
+    return;
 }
 
 //system calls handlers
 void timerHandler(){
-    asm volatile("li a7, 0;");
-    //Riscv::timerNum++;
+    Riscv::timerNum++;
 
-    //async dispatch
-    //TODO Integrate sleeping threads to handle interrupt
     Scheduler::decrementSleeping();
-    if(Scheduler::hasOnlySleepingThreads()){
-        Riscv::waitForNextTimer();
-    }
-
-    if(Scheduler::waitingHardwareAndWakeup()){
-        return;
-    }
 
     if(Scheduler::wokedUp){
         Scheduler::wokedUp = false;
+        Scheduler::endWait(Riscv::USER_MODE);
         PCB::running = Scheduler::get();
-        if(PCB::running->isStarted){
-            PCB::longJmp(PCB::running);
-        }else{
-            PCB::threadBegin(PCB::running);
-        }
+        //TODO check if this works properly, I think this will poison the stack!!
+        PCB::longJmp(PCB::running);
     }
 
+    if(!Scheduler::hasActiveThreads()){
+        return;
+    }
+
+    //async dispatch
     PCB::running->timeLeft--;
     if(PCB::running->timeLeft == 0){
         ThreadState* oldT = PCB::running;
@@ -129,6 +120,12 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             break;
         case 0x31: //thread_sleep
             Scheduler::putRunningToSleep(arg1);
+            if(Scheduler::waitingHardwareAndWakeup()){
+                Scheduler::prepairWait(Riscv::USER_MODE);
+            }
+            if(Scheduler::hasOnlySleepingThreads()){
+                Scheduler::prepairWait(Riscv::WAIT_SOFTWARE);
+            }
             PCB::dispatch_sync();
             Riscv::writeA0(0);
             break;
@@ -159,7 +156,6 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             SEM::semTimedWait((SemState*)arg1, (time_t)arg2);
             break;
         case 0x26: //sem_trywait
-            //TODO Check if trywait should do this
             semSt = (SemState*)arg1;
             if(semSt->state < 1){
                 Riscv::writeA0((uint64)0);
@@ -170,14 +166,14 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
         case 0x41: //getc
             if(Scheduler::hasJustOneActive()){
                 if(Scheduler::hasSleepingThreads()){
-                    //TODO case if there are sleeping threads and only active thread needs to wait for hardware interrupt
+                    Scheduler::prepairWait(Riscv::USER_MODE);
+                }else{
+                    Scheduler::prepairWait(Riscv::WAIT_HARDWARE);
                 }
-                SysConsole::readSent = true;
-                Riscv::waitForHardwareInterrupt(Riscv::WITH_SIE_CHANGE);
-            }else{
-                Scheduler::runningHArdwareWait();
-                PCB::dispatch_sync();
             }
+            Scheduler::runningHArdwareWait();
+            PCB::dispatch_sync();
+
             retValue = SysConsole::arr[0];
             Riscv::writeA0(retValue);
             break;
@@ -202,21 +198,20 @@ void ecallHandler(){
     uint64 a2 = Riscv::readA2();
     uint64 a3 = Riscv::readA3();
     uint64 scause = Riscv::readScause();
-    uint64 sepc = Riscv::readSepc()+4;
+    uint64 sepc = Riscv::readSepc();
     uint64 sstatus = Riscv::readSstatus();
 
     switch (scause) {
         case 0x8000000000000001UL: //timer as software interrupt
             timerHandler();
-            asm("li t0, 514;"
-                "csrw sie, t0;"
-                "csrr t0, sip;"
+            asm("csrr t0, sip;"
                 "andi t0, t0, 0xFFFFFFFFFFFFFFFD;"
                 "csrw sip, t0;"); //marking software interrupt resolved
             break;
-        case 0x0000000000000008UL: //software interrupt handle
+        case 0x0000000000000008UL: //ecall invoked software interrupt handle
         case 0x0000000000000009UL:
             systemCallHandler(a0, a1, a2, a3);
+            sepc+=4; //need to move to next instruction only if explicitly called with ecall
             asm("csrr t0, sip;"
                 "andi t0, t0, 0xFFFFFFFFFFFFFFFD;"
                 "csrw sip, t0;"); //marking software interrupt resolved

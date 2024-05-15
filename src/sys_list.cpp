@@ -257,6 +257,7 @@ void SysList<T>::remove(T data) {
             index = i;
             break;
         }
+        temp = temp->right;
     }
 
     if(index == -1) Exception("SysListElement not in the list, can't remove");
@@ -302,6 +303,7 @@ T SysList<T>::next() {
         Exception("Empty SysList has no next element");
     }
     if(count == 1){
+        lastElem = listHead;
         return listHead->data;
     }else{
         lastElem = lastElem->right;

@@ -11,35 +11,40 @@ asm(".global endOfProgramLabel;");
 void calculateSum(void*){
     printf("\t--- Function started ---\n");
     size_t sum = 0;
-    for (int i = 0; i < 1000000000; ++i) {
+    for (int i = 0; i < 100000000; ++i) {
         size_t a = 10;
         size_t b = 5;
         sum += a/b + a + b;
     }
     printf("--- Function ended %u ---\n", sum);
+    printf("Sleeping...\n");
+    thread_sleep(10);
+    printf("Wokeup\n");
 }
 
-//void criticalCalculate(void* sem){
-//    sem_wait((sem_t)sem);
-//    printf("--- Critical calculate started\n");
-//    size_t sum = 0;
-//    for (int i = 0; i < 100000000; ++i) {
-//        size_t a = 10;
-//        size_t b = 5;
-//        sum += a/b + a + b;
-//    }
-//
-//    printf("-- Critical Function ended %u. ---\n", sum);
-//    printf("AAAA %d\n", sem_close((sem_t)sem));
-//}
+void criticalCalculate(void* sem){
+    //FIXME this case doesn't work
+    sem_wait((sem_t)sem);
+    printf("--- Critical calculate started\n");
+    size_t sum = 0;
+    for (int i = 0; i < 1000000000; ++i) {
+        size_t a = 10;
+        size_t b = 5;
+        sum += a/b + a + b;
+    }
+    sem_signal((sem_t)sem);
+    printf("-- Critical Function ended %u. ---\n", sum);
+}
 
 void userMain(void*){
     printf("\t\tMain begin\n");
+    sem_t sem1;
+    sem_open(&sem1, 2);
+    sem_wait(sem1);
     thread_t ts[3];
-    for (int i = 0; i < 2; ++i) {
-        thread_create(&ts[i], &calculateSum, nullptr);
+    for (int i = 0; i < 3; ++i) {
+        thread_create(&ts[i], &criticalCalculate, sem1);
     }
-
     while(true){
         char c = getc();
         if(c == '\r') {
@@ -48,22 +53,17 @@ void userMain(void*){
         }
         putc(c);
     }
-
-//    char c = getc();
-//    putc(c);
+    sem_signal(sem1);
+    sem_close(sem1);
     printf("\t\tMain ended\n");
 }
 
-//void userMain(void*){
-
-//}
 
 //Test main
 //int main(){
 //    Riscv::writeStvec((uint64)&ecallWrapper);
 //    SysConsole::initialize();
-//    char c = getc();
-//    putc(c);
+//    putc('V');
 //    Riscv::stopEmulator();
 //    asm("endOfProgramLabel:");
 //    return 0;
@@ -84,7 +84,6 @@ int main(){
     //system cleanup
     Scheduler::cleanUp();
     //printf("Number of keys pressd: %u\nTimer signals: %u\n", Riscv::hardwareNum, Riscv::timerNum);
-    //TODO memory allocator cleanup
     Riscv::stopEmulator();
     return 0;
 }

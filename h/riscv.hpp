@@ -9,10 +9,18 @@
 
 class Riscv{
 public:
-
+    //keeping track of interrupts
     static size_t hardwareNum;
     static size_t timerNum;
-    static bool anotherInterrupt;
+
+    //keeping mode in which the system is currently - which interrupts are allowed
+    static uint8 interruptStatus;
+    enum{
+        WAIT_SOFTWARE = 1,
+        WAIT_HARDWARE = 2,
+        USER_MODE = 3
+    };
+
 
     //register operations
     //read ops
@@ -132,11 +140,7 @@ public:
         asm("csrw scause, %0;": "=r"(value));
     }
 
-    enum{
-        WITHOUT_SIE_CHANGE = 10,
-        WITH_SIE_CHANGE = 20
-    };
-
+    static void setMode(uint8 mode);
     static void switchToUserMode();
     static void waitingHardware();
     static void waitingSoftware();

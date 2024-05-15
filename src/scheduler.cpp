@@ -10,17 +10,28 @@ SysList<ThreadState*>* Scheduler::pool = nullptr;
 SysList<ThreadState*>* Scheduler::sleeping = nullptr;
 SysList<ThreadState*>* Scheduler::blocked = nullptr;
 SysList<ThreadState*>* Scheduler::waitingHardware = nullptr;
-
 bool Scheduler::wokedUp = false;
+ThreadState* Scheduler::waiter = nullptr;
+bool Scheduler::waiting = false;
+
+void waitingProcedure(void*){
+    size_t val = 0;
+    while(true){
+        val++;
+        val--;
+    }
+}
 
 void Scheduler::initialize() {
     pool = new SysList<ThreadState*>();
     sleeping = new SysList<ThreadState*>();
     blocked = new SysList<ThreadState*>();
     waitingHardware = new SysList<ThreadState*>();
+    waiter =  PCB::createState((void*)&waitingProcedure, nullptr);
 }
 
 void Scheduler::cleanUp() {
+    PCB::freeState(waiter);
     delete pool;
     delete sleeping;
     delete blocked;
@@ -77,12 +88,14 @@ void Scheduler::removeRunning(){
     PCB::freeState(tsTemp);
 }
 
-void Scheduler::putRunningToSleep(uint16 howLong) {
+//TODO this can be optimized to take more time to insert into a list, but less time to decrement sleeping timer
+void Scheduler::putRunningToSleep(time_t howLong) {
     ThreadState* tsTemp = pool->removeLast();
     tsTemp->waitingFor = howLong;
     sleeping->appendFront(tsTemp);
 }
 
+//TODO sleeping list can be optimized as mentioned in project proposal
 void Scheduler::decrementSleeping() {
     if(sleeping->getCount() == 0) return;
     for (SysIterator<ThreadState*> iter = sleeping->getIterator(); iter.hasElements(); iter.operator++()) {
@@ -90,8 +103,14 @@ void Scheduler::decrementSleeping() {
         temp->waitingFor--;
         if(temp->waitingFor == 0){
             sleeping->remove(temp);
+
+            if(temp->semaphore != nullptr){
+                blocked->remove(temp);
+                temp->semaphore = nullptr;
+            }
+
             temp->timeLeft = DEFAULT_TIME_SLICE;
-            if(pool->getCount() == 0){
+            if(waiting){
                 wokedUp = true;
             }
             pool->insertBeforeLast(temp);
@@ -104,7 +123,7 @@ bool Scheduler::hasOnlySleepingThreads() {
 }
 
 bool Scheduler::hasBlockedThreads() {
-    return (blocked->getCount() == 0)? false : true;
+    return blocked->getCount() != 0;
 }
 
 void Scheduler::blockRunning(){
@@ -119,6 +138,7 @@ void Scheduler::unblockThread(ThreadState* ts) {
 }
 
 void Scheduler::unblockOneForSem(SemState* semSt) {
+    if(blocked->getCount() == 0) return;
     for (auto iter = blocked->getIterator(); iter.hasElements(); ++iter) {
         if ((*iter)->semaphore == semSt) {
             ThreadState *tempState = *iter;
@@ -131,6 +151,7 @@ void Scheduler::unblockOneForSem(SemState* semSt) {
 }
 
 void Scheduler::deleteBlockedForSem(SemState *semSt) {
+    if(blocked->getCount() == 0) return;
     for(auto iter = blocked->getIterator(false); iter.hasElements(); ++iter){
         if ((*iter)->semaphore == semSt) {
             ThreadState *tempState = *iter;
@@ -138,6 +159,14 @@ void Scheduler::deleteBlockedForSem(SemState *semSt) {
             blocked->remove(tempState);
         }
     }
+}
+
+void Scheduler::blockAndSleepRunning(time_t timeout) {
+    ThreadState* tempTs = pool->removeLast();
+    tempTs->waitingFor = timeout;
+    blocked->appendBack(tempTs);
+    sleeping->appendFront(tempTs);
+    PCB::dispatch_sync();
 }
 
 void Scheduler::runningHArdwareWait() {
@@ -176,3 +205,17 @@ bool Scheduler::waitingHardwareAndWakeup() {
     return (sleeping->getCount() != 0 && waitingHardware->getCount() != 0 && pool->getCount() == 0);
 }
 
+void Scheduler::prepairWait(uint8 mode) {
+    Riscv::interruptStatus = mode;
+    Riscv::setMode(mode);
+    waiting = true;
+    pool->insertBeforeLast(waiter);
+}
+
+void Scheduler::endWait(uint8 mode) {
+    waiter->isStarted = false;
+    waiting = false;
+    pool->remove(waiter);
+    Riscv::interruptStatus = mode;
+    Riscv::setMode(mode);
+}

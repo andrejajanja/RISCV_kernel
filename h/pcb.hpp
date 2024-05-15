@@ -20,7 +20,7 @@ struct ThreadState{
     size_t registers[26];
     void* stackEnd; //pointer to the end thread stack
     uint16 timeLeft;
-    uint16 waitingFor;
+    time_t waitingFor;
     SemState* semaphore;
     bool isStarted;
 };

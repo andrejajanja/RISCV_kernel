@@ -41,10 +41,12 @@ int PCB::freeState(ThreadState* state){
 }
 
 void PCB::dispatch_sync() {
+    //waiting only for timer
     if(Scheduler::hasOnlySleepingThreads()){
-        if(setJmp(PCB::running) == 0){
-            Riscv::waitForNextTimer();
-        }
+        Scheduler::prepairWait(Riscv::WAIT_SOFTWARE);
+    }
+    if(Scheduler::waitingHardwareAndWakeup()){ //za cije babe zdravlje ovo nije radilo za sem_timedwait
+        Scheduler::prepairWait(Riscv::USER_MODE);
     }
 
     ThreadState* oldT = PCB::running;
@@ -65,6 +67,8 @@ void PCB::yield(ThreadState* oldT, ThreadState* newT) {
 
 void PCB::threadBegin(ThreadState *state) {
     state->isStarted = true;
+    Riscv::interruptStatus = Riscv::USER_MODE;
+    Riscv::setMode(Riscv::USER_MODE);
     //before every thread start there is switch to user mode procedure
     PCB::threadStart(state);
 }
@@ -78,16 +82,16 @@ void PCB::threadComplete() {
             "jalr x0, t0;");
     }
 
+    if(Scheduler::waitingHardwareAndWakeup()){
+        Scheduler::prepairWait(Riscv::USER_MODE);
+    }
     if(Scheduler::hasOnlySleepingThreads()){
-        Riscv::waitForNextTimer();
+        Scheduler::prepairWait(Riscv::WAIT_SOFTWARE);
     }
 
     if(Scheduler::hasOnlyWaitingHArdware()){
-        SysConsole::readSent = true;
-        Riscv::waitForHardwareInterrupt(Riscv::WITH_SIE_CHANGE);
-        Scheduler::removeOneHardwareWait();
+        Scheduler::prepairWait(Riscv::WAIT_HARDWARE);
     }
-
 
     PCB::running = Scheduler::get();
 

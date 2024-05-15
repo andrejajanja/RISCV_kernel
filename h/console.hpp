@@ -9,9 +9,7 @@ const int EOF = -1;
 
 class SysConsole {
 public:
-    static bool initialized;
     static char status;
-    static bool readSent;
     static char arr[];
 
     static void initialize();
