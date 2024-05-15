@@ -6,7 +6,6 @@
 #include "../h/exception.hpp"
 #include "../h/standardio.hpp"
 
-//TODO optimize readA0 function everywhere, is it even needed?
 
 //memory
 void* mem_alloc(uint64 size){

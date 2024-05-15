@@ -87,7 +87,6 @@ void printType(bool cond){
 void printf(const char* str, ...){
     //'...' are registers a1 to a7
     uint8 arg_cnt = 0;
-    //TODO find a way to put all these arguments on the stack, insted of like this, it looks ugly.
     uint64 arg_val[7] = {
             Riscv::readA1(),
             Riscv::readA2(),

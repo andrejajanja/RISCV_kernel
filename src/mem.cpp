@@ -53,7 +53,7 @@ void* MemoryAllocator::mem_allocate(size_t size) {
     }
 
     totalSize-=size;
-    //TODO in the future, upgrade 'first fit' to some exotic algorithm with binary tree
+    //TODO upgrade 'first-fit' to some exotic algorithm with binary tree
     MemSegment* temp = segmentsHead;
     if(size == segmentsHead->size){
         if(segmentsHead->right){
@@ -102,6 +102,10 @@ void* MemoryAllocator::mem_allocate(size_t size) {
 }
 
 int MemoryAllocator::mem_free(void* ptr) {
+    //Numbers in comments in this function represent edge-case being
+    //processed with that code-block. Notation and explanation for those
+    //edge-cases are in project's README file
+
     size_t size = *(size_t*)((uint64)(ptr)-sizeof(size_t));
     totalSize += size;
     MemSegment* pointer = (MemSegment*)((uint64)ptr-sizeof(size_t));
@@ -124,7 +128,7 @@ int MemoryAllocator::mem_free(void* ptr) {
             pointer->right = segmentsHead->right;
             if(segmentsHead->right) segmentsHead->right->left = pointer;
             pointer->size += segmentsHead->size;
-        }else{ //6 couldn't do join
+        }else{ //6, couldn't do join
             pointer->right = segmentsHead;
             segmentsHead->left = pointer;
             segmentsNumber++;
@@ -135,7 +139,6 @@ int MemoryAllocator::mem_free(void* ptr) {
     }
 
     MemSegment* temp = segmentsHead;
-    //TODO tidy this entire while loop up
     while(temp){
         if(temp->right){ //1, 2, 3, 4
             if(temp < pointer && pointer < temp->right){

@@ -43,7 +43,7 @@ void hadrwareHandler(){
     if(SysConsole::status & CONSOLE_RX_STATUS_BIT){
         if(Scheduler::hasWaitingHArdware()){
             SysConsole::arr[0] = Riscv::readConsole();
-            if(Scheduler::isWaiting()){
+            if(Scheduler::isWaiting()){ //in both cases, thread that was waiting for keyboard press gets control
                 Scheduler::endWait(Riscv::USER_MODE);
                 PCB::running = Scheduler::removeOneHardwareWait();
                 PCB::longJmp(PCB::running);
@@ -53,8 +53,9 @@ void hadrwareHandler(){
                 PCB::yield(oldTs, PCB::running);
             }
         }else {
+            //unexpected keyboard press, reading just to clean the buffer, for expected key-press
             SysConsole::arr[1] = Riscv::readConsole();
-            Riscv::hardwareNum++;
+            //Riscv::hardwareNum++; //optional counter of unexpected keyboard presses
         }
     }
     Riscv::writeA0(a0);
@@ -71,11 +72,11 @@ void timerHandler(){
         Scheduler::wokedUp = false;
         Scheduler::endWait(Riscv::USER_MODE);
         PCB::running = Scheduler::get();
-        //TODO check if this works properly, I think this will poison the stack!!
+        //I can just longjmp here because I'm 'beggining' waiting tread every time I wait
         PCB::longJmp(PCB::running);
     }
 
-    if(!Scheduler::hasActiveThreads()){
+    if(!Scheduler::hasActiveThreads()){ //case when just waiting for Scheduler to wake up
         return;
     }
 
@@ -128,6 +129,14 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             }
             PCB::dispatch_sync();
             Riscv::writeA0(0);
+            break;
+
+        //CPP-API additional calls for thead class
+        case 0x14: //thread constructor
+            break;
+        case 0x15: //thread destructor
+            break;
+        case 0x16: //thread start/run
             break;
 
         case 0x21: //sem_create

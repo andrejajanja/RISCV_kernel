@@ -4,6 +4,7 @@
 
 #include "../h/syscall_cpp.hpp"
 
+//memory ops
 void* operator new(size_t size) {
     void* ptr = mem_alloc(size);
     if(ptr) return ptr;
@@ -16,4 +17,9 @@ void operator delete (void* ptr){
     if(!status) return;
     Exception("Error in mem_free, operator delete.");
 }
+
+//Threads
+
+
+//Semaphores
 

@@ -23,7 +23,6 @@ void calculateSum(void*){
 }
 
 void criticalCalculate(void* sem){
-    //FIXME this case doesn't work
     sem_wait((sem_t)sem);
     printf("--- Critical calculate started\n");
     size_t sum = 0;

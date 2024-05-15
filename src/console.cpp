@@ -12,7 +12,6 @@ void SysConsole::initialize() {
     //wait for initial interrupt
     Riscv::interruptStatus = Riscv::WAIT_HARDWARE;
     Riscv::setMode(Riscv::WAIT_HARDWARE);
-    //TODO implement lightweight wait for hardware interrupt
     asm("addi sp, sp, -16;"
         "csrr t0, sstatus;"
         "sd t0, 0(sp);"
@@ -40,7 +39,6 @@ void SysConsole::putc(char chr) {
     //wait for acknowledge interrupt
     Riscv::interruptStatus = Riscv::WAIT_HARDWARE;
     Riscv::setMode(Riscv::WAIT_HARDWARE);
-    //TODO implement lightweight wait for hardware interrupt
     asm("addi sp, sp, -16;"
         "csrr t0, sstatus;"
         "sd t0, 0(sp);"
