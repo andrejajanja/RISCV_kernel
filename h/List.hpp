@@ -26,12 +26,10 @@ private:
     T data;
 };
 
-//TODO Implement linked list that has chunks of chunkSize elements, instead of just one element
 template <typename T>
 class List {
 public:
     List();
-    //TODO implement copy and move constructors
     List(List<T> &li) = delete;
     List(List<T> &&li) = delete;
     List(T data);

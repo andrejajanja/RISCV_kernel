@@ -8,6 +8,7 @@
 #include "../h/syscall_c.hpp"
 #include "../h/exception.hpp"
 
+
 //global memory operators
 void* operator new (size_t);
 void operator delete (void*);
@@ -23,11 +24,18 @@ public:
     static int sleep(time_t time);
 protected:
     Thread();
-    virtual void run();
+    virtual void run(){}
 private:
     thread_t myHandle;
     void (*body)(void*);
     void* arg;
+
+    //needed to add runWrapper for Thread() constructor
+    static void runWrapper(void* thread){
+        if(thread){
+            ((Thread*)thread)->run();
+        }
+    }
 };
 
 class PeriodicThread : public Thread {
@@ -35,9 +43,20 @@ public:
     void terminate ();
 protected:
     PeriodicThread (time_t period);
-    virtual void periodicActivation () {}
+    virtual void periodicActivation (){}
 private:
     time_t period;
+    bool active;
+
+    //same idea as in thread class
+    static void periodicRunWrapper(void* periThread){
+        if(periThread){
+            while(((PeriodicThread*)periThread)->active){
+                ((PeriodicThread*)periThread)->periodicActivation();
+                ((PeriodicThread*)periThread)->sleep(((PeriodicThread*)periThread)->period);
+            }
+        }
+    }
 };
 
 //Semaphores

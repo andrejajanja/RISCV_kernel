@@ -4,6 +4,7 @@
 
 #include "../h/mem.hpp"
 #include "../h/pcb.hpp"
+#include "../h/sys_structs.hpp"
 
 MemSegment* MemoryAllocator::segmentsHead = nullptr;
 uint32 MemoryAllocator::totalSize = 0;
@@ -53,7 +54,6 @@ void* MemoryAllocator::mem_allocate(size_t size) {
     }
 
     totalSize-=size;
-    //TODO upgrade 'first-fit' to some exotic algorithm with binary tree
     MemSegment* temp = segmentsHead;
     if(size == segmentsHead->size){
         if(segmentsHead->right){

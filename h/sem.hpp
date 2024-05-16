@@ -6,10 +6,7 @@
 #define RISCV_KERNEL_SEMAPHORE_H
 #include "../lib/hw.h"
 
-struct SemState{
-    int state;
-};
-
+struct SemState;
 typedef SemState* sem_t;
 
 class SEM {

@@ -5,6 +5,7 @@
 #include "../h/scheduler.hpp"
 #include "../h/riscv.hpp"
 #include "../h/sem.hpp"
+#include "../h/sys_structs.hpp"
 
 SysList<ThreadState*>* Scheduler::pool = nullptr;
 SysList<ThreadState*>* Scheduler::sleeping = nullptr;
@@ -27,7 +28,7 @@ void Scheduler::initialize() {
     sleeping = new SysList<ThreadState*>();
     blocked = new SysList<ThreadState*>();
     waitingHardware = new SysList<ThreadState*>();
-    waiter =  PCB::createState((void*)&waitingProcedure, nullptr);
+    waiter =  PCB::createState((void*)&waitingProcedure, nullptr, nullptr);
 }
 
 void Scheduler::cleanUp() {
@@ -85,17 +86,23 @@ void Scheduler::remove(ThreadState *ts) {
 
 void Scheduler::removeRunning(){
     ThreadState* tsTemp = pool->removeLast();
-    PCB::freeState(tsTemp);
+
+    if(tsTemp->cppSem){ //semSignal like code block
+        tsTemp->cppSem->state++;
+        if(tsTemp->cppSem->state == 0){
+            unblockOneForSem(PCB::running->cppSem);
+        }
+    }else{
+        PCB::freeState(tsTemp);
+    }
 }
 
-//TODO this can be optimized to take more time to insert into a list, but less time to decrement sleeping timer
 void Scheduler::putRunningToSleep(time_t howLong) {
     ThreadState* tsTemp = pool->removeLast();
     tsTemp->waitingFor = howLong;
     sleeping->appendFront(tsTemp);
 }
 
-//TODO sleeping list can be optimized as mentioned in project proposal
 void Scheduler::decrementSleeping() {
     if(sleeping->getCount() == 0) return;
     for (SysIterator<ThreadState*> iter = sleeping->getIterator(); iter.hasElements(); iter.operator++()) {
@@ -142,6 +149,9 @@ void Scheduler::unblockOneForSem(SemState* semSt) {
     for (auto iter = blocked->getIterator(); iter.hasElements(); ++iter) {
         if ((*iter)->semaphore == semSt) {
             ThreadState *tempState = *iter;
+            if(tempState->waitingFor > 0){
+                sleeping->remove(tempState);
+            }
             tempState->semaphore = nullptr;
             blocked->remove(tempState);
             pool->insertBeforeLast(tempState);

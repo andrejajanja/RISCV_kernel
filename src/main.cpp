@@ -6,27 +6,30 @@
 #include "../h/standardio.hpp"
 #include "../h/scheduler.hpp"
 #include "../h/console.hpp"
+#include "../h/syscall_cpp.hpp"
 asm(".global endOfProgramLabel;");
+
+using namespace C_API;
 
 void calculateSum(void*){
     printf("\t--- Function started ---\n");
     size_t sum = 0;
-    for (int i = 0; i < 100000000; ++i) {
+    for (int i = 0; i < 1000000000; ++i) {
         size_t a = 10;
         size_t b = 5;
         sum += a/b + a + b;
     }
     printf("--- Function ended %u ---\n", sum);
-    printf("Sleeping...\n");
-    thread_sleep(10);
-    printf("Wokeup\n");
+//    printf("Sleeping...\n");
+//    thread_sleep(10);
+//    printf("Wokeup\n");
 }
 
 void criticalCalculate(void* sem){
     sem_wait((sem_t)sem);
     printf("--- Critical calculate started\n");
     size_t sum = 0;
-    for (int i = 0; i < 1000000000; ++i) {
+    for (int i = 0; i < 100000000; ++i) {
         size_t a = 10;
         size_t b = 5;
         sum += a/b + a + b;
@@ -37,13 +40,18 @@ void criticalCalculate(void* sem){
 
 void userMain(void*){
     printf("\t\tMain begin\n");
-    sem_t sem1;
-    sem_open(&sem1, 2);
-    sem_wait(sem1);
-    thread_t ts[3];
+//    sem_t sem1;
+//    sem_open(&sem1, 2);
+//    sem_wait(sem1);
+    Thread* ts[3];
     for (int i = 0; i < 3; ++i) {
-        thread_create(&ts[i], &criticalCalculate, sem1);
+        ts[i] = new Thread(&calculateSum, nullptr);
     }
+    printf("Created threads\n");
+    for (int i = 0; i < 3; ++i) {
+        ts[i]->start();
+    }
+
     while(true){
         char c = getc();
         if(c == '\r') {
@@ -52,8 +60,13 @@ void userMain(void*){
         }
         putc(c);
     }
-    sem_signal(sem1);
-    sem_close(sem1);
+
+    for (int i = 0; i < 3; ++i) {
+        delete ts[i];
+    }
+//    sem_signal(sem1);
+//    sem_close(sem1);
+
     printf("\t\tMain ended\n");
 }
 
@@ -68,7 +81,7 @@ void userMain(void*){
 //    return 0;
 //}
 
-//FIXME there is a bug when typing input before main starts
+//note: there is a bug when typing input before main starts
 int main(){
     //system initialize
     Riscv::writeStvec((uint64)&ecallWrapper);
@@ -79,7 +92,6 @@ int main(){
     SysConsole::initialize();
     PCB::threadBegin(PCB::running);
     asm("endOfProgramLabel:");
-
     //system cleanup
     Scheduler::cleanUp();
     //printf("Number of keys pressd: %u\nTimer signals: %u\n", Riscv::hardwareNum, Riscv::timerNum);

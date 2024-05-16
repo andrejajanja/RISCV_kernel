@@ -19,7 +19,6 @@ void List<T>::checkIndex(short index) const {
         Exception("List index out of range");
 }
 
-//TODO implement empty list creation
 template <typename T>
 List<T>::List(): listHead(nullptr), listBack(nullptr), lastElem(nullptr), lastIndex(0), count(0) {}
 
@@ -71,7 +70,6 @@ void List<T>::appendBack(T data) {
     count++;
 }
 
-//TODO optimize - insert
 template <typename T>
 void List<T>::insert(T data, short index){
     //optimizations
@@ -102,7 +100,6 @@ void List<T>::insert(T data, short index){
     count++;
 }
 
-//TODO optimize - remove
 template <typename T>
 void List<T>::remove(short index){
     if(index == 0){
@@ -189,7 +186,6 @@ T List<T>::previous(){
     }
 }
 
-//TODO optimize - index
 template <typename T>
 T List<T>::operator[](short index){
     if(count == 0) Exception("Empty list can't be indexed");

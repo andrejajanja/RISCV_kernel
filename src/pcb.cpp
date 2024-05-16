@@ -7,10 +7,12 @@
 #include "../h/riscv.hpp"
 #include "../h/scheduler.hpp"
 #include "../h/console.hpp"
+#include "../h/sys_structs.hpp"
+#include "../h/sem.hpp"
 
 thread_t PCB::running = nullptr;
 
-ThreadState* PCB::createState(void* start_routine, void* arg){
+ThreadState* PCB::createState(void* start_routine, void* arg, SemState* sem){
     //size = number of segments it takes to store ThreadState struct
     size_t size = calculateSize<ThreadState>();
 
@@ -31,7 +33,11 @@ ThreadState* PCB::createState(void* start_routine, void* arg){
     ptr->stackEnd = spacePointer;
     ptr->timeLeft = DEFAULT_TIME_SLICE;
     ptr->semaphore = nullptr;
+    ptr->cppSem = sem;
     ptr->isStarted = false;
+    //this value not being explicitly set to 0 led to userMain thread
+    //ending up in sleeping threads even tough it was never put to sleep lol
+    ptr->waitingFor = 0;
 
     return ptr;
 }

@@ -6,6 +6,7 @@
 #include "../h/mem.hpp"
 #include "../h/scheduler.hpp"
 #include "../h/console.hpp"
+#include "../h/sys_structs.hpp"
 asm(".global doneWaitingForHardware;");
 
 size_t Riscv::hardwareNum = 0;
@@ -108,7 +109,7 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
 
         case 0x11: //thread_create
             retValue = arg1;
-            ts = PCB::createState((void*)arg2, (void*)arg3);
+            ts = PCB::createState((void*)arg2, (void*)arg3, nullptr);
             *((uint64*)retValue) = (uint64)ts;
             Scheduler::put(ts);
             Riscv::writeA0(0);
@@ -132,11 +133,23 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             break;
 
         //CPP-API additional calls for thead class
-        case 0x14: //thread constructor
+        case 0x14: //construct_ts
+            retValue = arg1;
+            semSt = SEM::constructSem(1);
+            ts = PCB::createState((void*)arg2, (void*)arg3, semSt);
+            *((uint64*)retValue) = (uint64)ts;
+            Riscv::writeA0(0);
             break;
-        case 0x15: //thread destructor
+        case 0x15: //destruct ts
+
+            SEM::destructSem(((ThreadState*)arg1)->cppSem);
+            PCB::freeState((ThreadState*)arg1);
             break;
-        case 0x16: //thread start/run
+        case 0x16: //start_thread
+            semSt = ((ThreadState*)arg1)->cppSem;
+            semSt->state--;
+            Scheduler::put((ThreadState*)arg1);
+            Riscv::writeA0(0);
             break;
 
         case 0x21: //sem_create

@@ -6,29 +6,13 @@
 #define RISCV_KERNEL_PCB_H
 
 #include "../lib/hw.h"
-#include "sem.hpp"
 
-//register name macros, for more ergonomic access
-#define SP 20
-#define RA 21
-#define PC 22
-
-struct ThreadState{
-    //Order of registers in array:
-    //a0 - a7, s0 - s11, sp, ra, pc, sepc, sstatus, scause,
-    //0 - 7,   8 - 19,   20, 21, 22,   23,      24,     25,
-    size_t registers[26];
-    void* stackEnd; //pointer to the end thread stack
-    uint16 timeLeft;
-    time_t waitingFor;
-    SemState* semaphore;
-    bool isStarted;
-};
-typedef ThreadState* thread_t;
+struct ThreadState;
+struct SemState;
 
 class PCB {
 public:
-    static ThreadState* createState(void* start_routine, void* arg);
+    static ThreadState* createState(void* start_routine, void* arg, SemState* sem);
     static int freeState(ThreadState* state);
 
     static bool setJmp(ThreadState* state);
@@ -37,14 +21,13 @@ public:
     static void dispatch_sync();
     static void yield(ThreadState* oldT, ThreadState* newT);
 
-    //isRunning = true, jump to User mode, threadStart
     static void threadBegin(ThreadState* state);
     //actually starts a thread
     static void threadStart(ThreadState* state);
     static void threadCompleteSysCall();
     static void threadComplete();
 
-    static thread_t running;
+    static ThreadState* running;
 };
 
 #endif //RISCV_KERNEL_PCB_H

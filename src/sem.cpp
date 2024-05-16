@@ -6,6 +6,7 @@
 #include "../h/mem.hpp"
 #include "../h/riscv.hpp"
 #include "../h/scheduler.hpp"
+#include "../h/sys_structs.hpp"
 
 SemState* SEM::constructSem(int init) {
     auto semPtr = (SemState*)MemoryAllocator::mem_allocate(1);

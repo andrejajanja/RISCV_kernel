@@ -10,6 +10,8 @@
 #include "../h/riscv.hpp"
 #include "../h/syscall_c.hpp"
 
+using namespace C_API;
+
 //'printType' - polymorphed funtion that print out base types impemented here
 void printType(const char* str){
     while (*str != '\0'){
