@@ -27,7 +27,7 @@ Thread::Thread(void (*body)(void *), void* arg): myHandle(nullptr), body(body), 
 
 //TODO TEST IMPLEMENTATION
 Thread::Thread(): myHandle(nullptr), body(runWrapper), arg(this) {
-    C_API::construct_ts(&myHandle, runWrapper, arg);
+    C_API::construct_ts(&myHandle, runWrapper, this);
 }
 
 
@@ -49,7 +49,9 @@ int Thread::sleep(time_t time) {
 }
 
 //TODO TEST IMPLEMENTATION
-PeriodicThread::PeriodicThread(time_t period): Thread(&periodicRunWrapper, this), period(period), active(true){}
+PeriodicThread::PeriodicThread(time_t period): Thread(&periodicRunWrapper, this), period(period), active(true){
+    this->start();
+}
 
 void PeriodicThread::terminate() {
     active = false;

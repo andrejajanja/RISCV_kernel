@@ -19,9 +19,10 @@ void calculateSum(void*){
         size_t b = 5;
         sum += a/b + a + b;
     }
+    thread_sleep(100);
     printf("--- Function ended %u ---\n", sum);
 //    printf("Sleeping...\n");
-//    thread_sleep(10);
+//    thread_sleep(100);
 //    printf("Wokeup\n");
 }
 
@@ -40,18 +41,9 @@ void criticalCalculate(void* sem){
 
 void userMain(void*){
     printf("\t\tMain begin\n");
-//    sem_t sem1;
-//    sem_open(&sem1, 2);
-//    sem_wait(sem1);
-    Thread* ts[3];
-    for (int i = 0; i < 3; ++i) {
-        ts[i] = new Thread(&calculateSum, nullptr);
-    }
-    printf("Created threads\n");
-    for (int i = 0; i < 3; ++i) {
-        ts[i]->start();
-    }
 
+    Thread* t = new Thread(&calculateSum, nullptr);
+    t->start();
     while(true){
         char c = getc();
         if(c == '\r') {
@@ -60,26 +52,11 @@ void userMain(void*){
         }
         putc(c);
     }
-
-    for (int i = 0; i < 3; ++i) {
-        delete ts[i];
-    }
-//    sem_signal(sem1);
-//    sem_close(sem1);
+    printf("Input ended\n");
+    delete t;
 
     printf("\t\tMain ended\n");
 }
-
-
-//Test main
-//int main(){
-//    Riscv::writeStvec((uint64)&ecallWrapper);
-//    SysConsole::initialize();
-//    putc('V');
-//    Riscv::stopEmulator();
-//    asm("endOfProgramLabel:");
-//    return 0;
-//}
 
 //note: there is a bug when typing input before main starts
 int main(){
@@ -94,7 +71,6 @@ int main(){
     asm("endOfProgramLabel:");
     //system cleanup
     Scheduler::cleanUp();
-    //printf("Number of keys pressd: %u\nTimer signals: %u\n", Riscv::hardwareNum, Riscv::timerNum);
     Riscv::stopEmulator();
     return 0;
 }
