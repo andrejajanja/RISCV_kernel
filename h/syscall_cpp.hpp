@@ -5,7 +5,7 @@
 #ifndef RISCV_KERNEL_SYSCALL_CPP_H
 #define RISCV_KERNEL_SYSCALL_CPP_H
 
-#include "../h/syscall_c.hpp"
+#include "../h/syscall_c.h"
 #include "../h/exception.hpp"
 
 

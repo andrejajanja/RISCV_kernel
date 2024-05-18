@@ -7,8 +7,7 @@ typedef ThreadState* thread_t;
 struct SemState;
 typedef SemState* sem_t;
 
-namespace C_API{
-    //memory allocator
+ //memory allocator
     void* mem_alloc(uint64 size);
     int mem_free(void* pointer);
 
@@ -16,7 +15,7 @@ namespace C_API{
     int thread_create(thread_t* handle, void(*start_routine)(void*), void* arg);
     int thread_exit();
     int thread_dispatch();
-    int thread_sleep(time_t duration);
+    int time_sleep(time_t duration);
 
 //semaphores
     int sem_open(sem_t* handle, unsigned init);
@@ -35,6 +34,5 @@ namespace C_API{
     int construct_ts(thread_t* handle, void(*start_routine)(void*), void* arg);
     void destruct_ts(thread_t handle);
     int start_thread(thread_t handle);
-}
 
 #endif

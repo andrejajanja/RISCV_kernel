@@ -53,7 +53,7 @@ public:
     static void endWait(uint8 mode);
 
     static bool wokedUp;
-private:
+//private:
     static SysList<ThreadState*>* pool;
     static SysList<ThreadState*>* sleeping;
     static SysList<ThreadState*>* blocked;

@@ -1,12 +1,12 @@
 //
 // Created by os on 4/15/24.
 //
-#include "../h/syscall_c.hpp"
+#include "../h/syscall_c.h"
 #include "../h/riscv.hpp"
 #include "../h/exception.hpp"
 
 //memory
-void* C_API::mem_alloc(uint64 size){
+void* mem_alloc(uint64 size){
     if(size == 0) return nullptr; //allocating memory chunks of 0 bytes isn't allowed
     size += sizeof(size_t); //this is to account for metadata for size of allocated segment
 
@@ -23,7 +23,7 @@ void* C_API::mem_alloc(uint64 size){
     return (void*)value;
 }
 
-int C_API::mem_free(void* pointer){
+int mem_free(void* pointer){
     if(pointer == nullptr) return -1;
     //if((uint64) pointer > )
     asm("mv a1, %0;"
@@ -34,7 +34,7 @@ int C_API::mem_free(void* pointer){
 }
 
 //threads
-int C_API::thread_create(thread_t* handle, void(*start_routine)(void*), void* arg){
+int thread_create(thread_t* handle, void(*start_routine)(void*), void* arg){
     if(handle == nullptr){
         new Exception("thread_create: handle argument can't be null");
     }
@@ -52,23 +52,20 @@ int C_API::thread_create(thread_t* handle, void(*start_routine)(void*), void* ar
     return (int)value;
 }
 
-int C_API::thread_exit(){
+int thread_exit(){
     asm("li a0, 0x12;"
         "ecall;");
     return (int)Riscv::readA0();
 }
 
-int C_API::thread_dispatch(){
+int thread_dispatch(){
     asm("mv a1, ra;"
         "li a0, 0x13;");
     asm("ecall;");
     return (int)Riscv::readA0();
 }
 
-int C_API::thread_sleep(time_t duration){
-    if(duration == 0){
-        new Exception("thread_sleep: duration can't be less then 1");
-    }
+int time_sleep(time_t duration){
     asm("mv a1, %0;"
         "li a0, 0x31;"
         "ecall;" : : "r"(duration));
@@ -77,13 +74,9 @@ int C_API::thread_sleep(time_t duration){
 }
 
 //semaphores
-int C_API::sem_open(sem_t* handle, unsigned init){
+int sem_open(sem_t* handle, unsigned init){
     if(handle == nullptr){
         new Exception("sem_open: handle argument can't be null");
-    }
-
-    if(init < 1){
-        new Exception("sem_open: init argument can't be less then 1");
     }
 
     asm("mv a2, %1;"
@@ -94,7 +87,7 @@ int C_API::sem_open(sem_t* handle, unsigned init){
     return (int)value;
 }
 
-int C_API::sem_close(sem_t handle){
+int sem_close(sem_t handle){
     if(handle == nullptr){
         new Exception("sem_close: handle argument can't be null");
     }
@@ -105,7 +98,7 @@ int C_API::sem_close(sem_t handle){
     return (int)value;
 }
 
-int C_API::sem_wait(sem_t id){
+int sem_wait(sem_t id){
     if(id == nullptr){
         new Exception("sem_wait: id can't be null");
     }
@@ -116,7 +109,7 @@ int C_API::sem_wait(sem_t id){
     return (int)value;
 }
 
-int C_API::sem_signal(sem_t id){
+int sem_signal(sem_t id){
     if(id == nullptr){
         new Exception("sem_signal: id can't be null");
     }
@@ -127,7 +120,7 @@ int C_API::sem_signal(sem_t id){
     return (int)value;
 }
 
-int C_API::sem_timedwait(sem_t id, time_t timeout){
+int sem_timedwait(sem_t id, time_t timeout){
     if(id == nullptr){
         new Exception("sem_timedwait: id can't be null");
         return 0;
@@ -146,7 +139,7 @@ int C_API::sem_timedwait(sem_t id, time_t timeout){
     return (int)value;
 }
 
-int C_API::sem_trywait(sem_t id){
+int sem_trywait(sem_t id){
     asm("mv a1, %0;"
         "li a0, 0x26;"
         "ecall;" : : "r"(id));
@@ -155,20 +148,20 @@ int C_API::sem_trywait(sem_t id){
 }
 
 //console
-char C_API::getc(){
+char getc(){
     asm("li a0, 0x41;"
         "ecall;");
     char value = (char)Riscv::readA0();
     return value;
 }
 
-void C_API::putc(char c){
+void putc(char c){
     asm("mv a1, %0;"
         "li a0, 0x42;"
         "ecall;" : : "r"(c));
 }
 
-int C_API::construct_ts(thread_t *handle, void (*start_routine)(void *), void *arg) {
+int construct_ts(thread_t *handle, void (*start_routine)(void *), void *arg) {
     if(handle == nullptr){
         new Exception("Construct thread state: handle argument can't be null");
     }
@@ -186,7 +179,7 @@ int C_API::construct_ts(thread_t *handle, void (*start_routine)(void *), void *a
     return (int)value;
 }
 
-void C_API::destruct_ts(thread_t handle) {
+void destruct_ts(thread_t handle) {
     if(handle == nullptr){
         new Exception("destruct thread state: handle argument can't be null");
     }
@@ -195,7 +188,7 @@ void C_API::destruct_ts(thread_t handle) {
         "ecall": : "r"(handle));
 }
 
-int C_API::start_thread(thread_t handle) {
+int start_thread(thread_t handle) {
     if(handle == nullptr){
         new Exception("start thread: handle argument can't be null");
     }

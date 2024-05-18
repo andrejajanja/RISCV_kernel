@@ -2,12 +2,10 @@
 // Created by os on 4/13/24.
 //
 #include "../h/riscv.hpp"
-#include "../h/syscall_c.hpp"
+#include "../h/syscall_c.h"
 #include "../h/scheduler.hpp"
 #include "../h/console.hpp"
 asm(".global endOfProgramLabel;");
-
-using namespace C_API;
 
 extern void userMain();
 

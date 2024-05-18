@@ -122,12 +122,6 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             break;
         case 0x31: //thread_sleep
             Scheduler::putRunningToSleep(arg1);
-            if(Scheduler::waitingHardwareAndWakeup()){
-                Scheduler::prepairWait(Riscv::USER_MODE);
-            }
-            if(Scheduler::hasOnlySleepingThreads()){
-                Scheduler::prepairWait(Riscv::WAIT_SOFTWARE);
-            }
             PCB::dispatch_sync();
             Riscv::writeA0(0);
             break;

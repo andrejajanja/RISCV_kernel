@@ -36,6 +36,7 @@ static void producerKeyboard(void *arg) {
 static void producer(void *arg) {
     struct thread_data *data = (struct thread_data *) arg;
 
+
     int i = 0;
     while (!threadEnd) {
         data->buffer->put(data->id + '0');
@@ -131,7 +132,5 @@ void producerConsumer_C_API() {
     }
 
     sem_close(waitForAll);
-
     delete buffer;
-
 }

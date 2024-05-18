@@ -57,6 +57,7 @@ void PCB::dispatch_sync() {
 
     ThreadState* oldT = PCB::running;
     PCB::running = Scheduler::get();
+    PCB::running->timeLeft = DEFAULT_TIME_SLICE;
     if(oldT == PCB::running) return;
     yield(oldT, PCB::running);
 }
@@ -100,8 +101,8 @@ void PCB::threadComplete() {
     }
 
     PCB::running = Scheduler::get();
-
     if(PCB::running->isStarted){
+        PCB::running->timeLeft = DEFAULT_TIME_SLICE;
         longJmp(PCB::running);
     }else{
         threadBegin(PCB::running);
