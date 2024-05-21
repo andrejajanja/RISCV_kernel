@@ -31,14 +31,6 @@ public:
     static bool hasSleepingThreads();
     static bool waitingHardwareAndWakeup();
 
-    //semaphores
-    static bool hasBlockedThreads();
-    static void blockRunning();
-    static void unblockThread(ThreadState*);
-    static void unblockOneForSem(SemState* sem);
-    static void deleteBlockedForSem(SemState* sem);
-    static void blockAndSleepRunning(time_t timeout);
-
     //hardware interrupts
     static void runningHArdwareWait();
     static ThreadState* removeOneHardwareWait();
@@ -56,9 +48,10 @@ public:
 //private:
     static SysList<ThreadState*>* pool;
     static SysList<ThreadState*>* sleeping;
-    static SysList<ThreadState*>* blocked;
+//    static SysList<ThreadState*>* blocked;
     static SysList<ThreadState*>* waitingHardware;
 
+//    static uint32 numBlocked;
     static ThreadState* waiter;
     static bool waiting;
 };

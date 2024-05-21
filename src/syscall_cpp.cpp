@@ -31,7 +31,7 @@ Thread::Thread(): myHandle(nullptr), body(runWrapper), arg(this) {
 
 
 Thread::~Thread() noexcept {
-    sem_wait(this->myHandle->cppSem);
+    sem_wait(this->myHandle->semaphore);
     destruct_ts(this->myHandle);
 }
 

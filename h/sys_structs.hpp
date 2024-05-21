@@ -14,6 +14,7 @@
 
 struct SemState{
     int state;
+    struct BlockedPCB* beggining;
 };
 
 struct ThreadState{

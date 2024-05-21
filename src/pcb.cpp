@@ -82,6 +82,13 @@ void PCB::threadBegin(ThreadState *state) {
 
 void PCB::threadComplete() {
     Scheduler::removeRunning();
+    if(PCB::running->cppSem){
+        if(PCB::running->cppSem->state == -1){
+            SEM::popBlocked(PCB::running->cppSem);
+        }
+    }else{
+        PCB::freeState(PCB::running);
+    }
 
     if(!Scheduler::hasAnyThreads()){
         //jumping to the end of the program

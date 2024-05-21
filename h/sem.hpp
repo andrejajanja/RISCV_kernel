@@ -9,8 +9,17 @@
 struct SemState;
 typedef SemState* sem_t;
 
+struct BlockedPCB{
+    struct ThreadState* pcbPtr;
+    BlockedPCB* next;
+};
+
 class SEM {
 public:
+    static BlockedPCB* constructBlocked(ThreadState*);
+    static int destructBlocked(BlockedPCB*);
+    static void popBlocked(SemState*);
+
     static SemState* constructSem(int);
     static int destructSem(SemState*);
     static void semSignal(sem_t);

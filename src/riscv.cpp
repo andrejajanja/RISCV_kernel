@@ -135,7 +135,6 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             Riscv::writeA0(0);
             break;
         case 0x15: //destruct ts
-
             SEM::destructSem(((ThreadState*)arg1)->cppSem);
             PCB::freeState((ThreadState*)arg1);
             break;
@@ -154,12 +153,7 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             break;
         case 0x22: //sem_close
             semSt = (SemState*)arg1;
-            retValue = 0;
-            if(semSt->state < 1){
-                retValue = -1;
-                Scheduler::deleteBlockedForSem(semSt);
-            }
-            SEM::destructSem(semSt);
+            retValue = SEM::destructSem(semSt);
             Riscv::writeA0((uint64)retValue);
             break;
         case 0x23: //sem_wait
@@ -233,15 +227,15 @@ void ecallHandler(){
                 "csrw sip, t0;"); //marking software interrupt resolved
             break;
         case 0x0000000000000002UL:
-            printType("OS DETECTED ERROR: Illegal instruction\n");
+            printType("\n\nOS DETECTED ERROR: Illegal instruction\n\n");
             Riscv::stopEmulator();
             break;
         case 0x0000000000000005UL:
-            printType("OS DETECTED ERROR: reading from forbidden address\n");
+            printType("\n\nOS DETECTED ERROR: reading from forbidden address\n\n");
             Riscv::stopEmulator();
             break;
         case 0x0000000000000007UL:
-            printType("OS DETECTED ERROR: writing to forbidden address\n");
+            printType("\n\nOS DETECTED ERROR: writing to forbidden address\n\n");
             Riscv::stopEmulator();
             break;
         case 0x8000000000000009UL: //hardware interrupt handle
@@ -249,7 +243,7 @@ void ecallHandler(){
             break;
         default:
             //this is error case, because no other case should go here, print something
-            printf("OS DETECTED ERROR: Unhandled scause value: '%u'\n", scause);
+            printf("\n\nOS DETECTED ERROR: Unhandled scause value: '%u'\n\n", scause);
             Riscv::stopEmulator();
             break;
     }

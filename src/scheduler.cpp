@@ -9,7 +9,7 @@
 
 SysList<ThreadState*>* Scheduler::pool = nullptr;
 SysList<ThreadState*>* Scheduler::sleeping = nullptr;
-SysList<ThreadState*>* Scheduler::blocked = nullptr;
+//SysList<ThreadState*>* Scheduler::blocked = nullptr;
 SysList<ThreadState*>* Scheduler::waitingHardware = nullptr;
 bool Scheduler::wokedUp = false;
 ThreadState* Scheduler::waiter = nullptr;
@@ -26,7 +26,7 @@ void waitingProcedure(void*){
 void Scheduler::initialize() {
     pool = new SysList<ThreadState*>();
     sleeping = new SysList<ThreadState*>();
-    blocked = new SysList<ThreadState*>();
+//    blocked = new SysList<ThreadState*>();
     waitingHardware = new SysList<ThreadState*>();
     waiter =  PCB::createState((void*)&waitingProcedure, nullptr, nullptr);
 }
@@ -35,7 +35,6 @@ void Scheduler::cleanUp() {
     PCB::freeState(waiter);
     delete pool;
     delete sleeping;
-    delete blocked;
     delete waitingHardware;
 }
 
@@ -58,18 +57,18 @@ void Scheduler::printThreads(){
         }
     }
 
-    if(blocked->getCount() != 0){
-        printf("- Blocked -> %d ---\n", blocked->getCount());
-        for(auto iter = blocked->getIterator(); iter.hasElements(); ++iter){
-            printf(" Addr: %u\n", (*iter)->registers[PC]);
-        }
-    }
+//    if(blocked->getCount() != 0){
+//        printf("- Blocked -> %d ---\n", blocked->getCount());
+//        for(auto iter = blocked->getIterator(); iter.hasElements(); ++iter){
+//            printf(" Addr: %u\n", (*iter)->registers[PC]);
+//        }
+//    }
 
     printf("--- End thread state ---\n\n");
 }
 
 bool Scheduler::hasAnyThreads(){
-    return (pool->getCount() != 0 || blocked->getCount() != 0 || waitingHardware->getCount() != 0 );
+    return (pool->getCount() != 0 || sleeping->getCount() != 0 || waitingHardware->getCount() != 0 );
 }
 
 void Scheduler::put(ThreadState *ts) {
@@ -85,16 +84,7 @@ void Scheduler::remove(ThreadState *ts) {
 }
 
 void Scheduler::removeRunning(){
-    ThreadState* tsTemp = pool->removeLast();
-
-    if(tsTemp->cppSem){ //semSignal like code block
-        tsTemp->cppSem->state++;
-        if(tsTemp->cppSem->state == 0){
-            unblockOneForSem(PCB::running->cppSem);
-        }
-    }else{
-        PCB::freeState(tsTemp);
-    }
+    pool->removeLast();
 }
 
 void Scheduler::putRunningToSleep(time_t howLong) {
@@ -110,17 +100,37 @@ void Scheduler::decrementSleeping() {
         temp->waitingFor--;
         if(temp->waitingFor == 0){
             sleeping->remove(temp);
-
-            if(temp->semaphore != nullptr){
-                blocked->remove(temp);
-                temp->semaphore = nullptr;
-            }
-
             temp->timeLeft = DEFAULT_TIME_SLICE;
             if(waiting){
                 wokedUp = true;
             }
             pool->insertBeforeLast(temp);
+
+            if(temp->semaphore == nullptr) continue;
+            //if temp was put to sleep with SEM::timedwait
+
+            SemState* sem = temp->semaphore;
+            temp->semaphore = nullptr;
+
+            BlockedPCB* tempPCB = sem->beggining;
+            if(temp == tempPCB->pcbPtr){
+                sem->beggining = sem->beggining->next;
+                SEM::destructBlocked(tempPCB);
+                continue;
+            }
+
+            BlockedPCB* prevTempPCB = nullptr;
+
+            while(tempPCB!= nullptr){
+                if(temp == tempPCB->pcbPtr){
+                    prevTempPCB->next = tempPCB->next;
+                    SEM::destructBlocked(tempPCB);
+                    break;
+                }
+
+                prevTempPCB = tempPCB;
+                tempPCB = tempPCB->next;
+            }
         }
     }
 }
@@ -129,55 +139,6 @@ bool Scheduler::hasOnlySleepingThreads() {
     return (sleeping->getCount() != 0 && pool->getCount() == 0 && waitingHardware->getCount() == 0);
 }
 
-bool Scheduler::hasBlockedThreads() {
-    return blocked->getCount() != 0;
-}
-
-void Scheduler::blockRunning(){
-    ThreadState* tsTemp = pool->removeLast();
-    blocked->appendBack(tsTemp);
-    PCB::dispatch_sync();
-}
-
-void Scheduler::unblockThread(ThreadState* ts) {
-    blocked->remove(ts);
-    pool->insertBeforeLast(ts);
-}
-
-void Scheduler::unblockOneForSem(SemState* semSt) {
-    if(blocked->getCount() == 0) return;
-    for (auto iter = blocked->getIterator(); iter.hasElements(); ++iter) {
-        if ((*iter)->semaphore == semSt) {
-            ThreadState *tempState = *iter;
-            if(tempState->waitingFor > 0){
-                sleeping->remove(tempState);
-            }
-            tempState->semaphore = nullptr;
-            blocked->remove(tempState);
-            pool->insertBeforeLast(tempState);
-            break;
-        }
-    }
-}
-
-void Scheduler::deleteBlockedForSem(SemState *semSt) {
-    if(blocked->getCount() == 0) return;
-    for(auto iter = blocked->getIterator(false); iter.hasElements(); ++iter){
-        if ((*iter)->semaphore == semSt) {
-            ThreadState *tempState = *iter;
-            tempState->semaphore = nullptr;
-            blocked->remove(tempState);
-        }
-    }
-}
-
-void Scheduler::blockAndSleepRunning(time_t timeout) {
-    ThreadState* tempTs = pool->removeLast();
-    tempTs->waitingFor = timeout;
-    blocked->appendBack(tempTs);
-    sleeping->appendFront(tempTs);
-    PCB::dispatch_sync();
-}
 
 void Scheduler::runningHArdwareWait() {
     ThreadState* ts = pool->removeLast();
@@ -192,7 +153,7 @@ ThreadState* Scheduler::removeOneHardwareWait() {
 }
 
 bool Scheduler::hasOnlyWaitingHArdware() {
-    return (waitingHardware->getCount() != 0 && pool->getCount() == 0 && blocked->getCount() == 0);
+    return (waitingHardware->getCount() != 0 && pool->getCount() == 0);
 }
 
 bool Scheduler::hasWaitingHArdware() {
@@ -200,7 +161,7 @@ bool Scheduler::hasWaitingHArdware() {
 }
 
 bool Scheduler::hasJustOneActive() {
-    return (pool->getCount() == 1 && blocked->getCount() == 0 && waitingHardware->getCount() == 0);
+    return (pool->getCount() == 1 && waitingHardware->getCount() == 0);
 }
 
 bool Scheduler::hasSleepingThreads() {
