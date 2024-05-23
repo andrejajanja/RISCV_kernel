@@ -174,6 +174,5 @@ void producerConsumer_CPP_Sync_API() {
     delete consumerThread;
     delete waitForAll;
     delete buffer;
-
 }
 

@@ -1,5 +1,6 @@
 
 #include "../h/syscall_c.h"
+#include "../h/exception.hpp"
 
 #include "buffer.hpp"
 
@@ -29,7 +30,6 @@ static void producerKeyboard(void *arg) {
 
     threadEnd = 1;
     data->buffer->put('!');
-
     sem_signal(data->wait);
 }
 
@@ -60,6 +60,7 @@ static void consumer(void *arg) {
 
         putc(key);
 
+
         if (i % (5 * data->id) == 0) {
             thread_dispatch();
         }
@@ -88,6 +89,7 @@ void producerConsumer_C_API() {
     printString("Unesite velicinu bafera?\n");
     getString(input, 30);
     n = stringToInt(input);
+
 
     printString("Broj proizvodjaca "); printInt(threadNum);
     printString(" i velicina bafera "); printInt(n);
@@ -126,7 +128,9 @@ void producerConsumer_C_API() {
     }
 
     thread_dispatch();
-
+    if(waitForAll == nullptr){
+        new Exception("producerConsumer_C_API() - itemAvailable is nullptr");
+    }
     for (int i = 0; i <= threadNum; i++) {
         sem_wait(waitForAll);
     }

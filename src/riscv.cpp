@@ -33,63 +33,85 @@ void sysCallExcepiton(const char* msg){
 void hadrwareHandler(){
     size_t a0 = Riscv::readA0();
 
-    //if some other device caused hardware interrupt, shutdown
-    if(plic_claim() != CONSOLE_IRQ){
+    if(plic_claim() != CONSOLE_IRQ){ //if some other device caused hardware interrupt, shutdown
         Riscv::stopEmulator();
     }
 
     SysConsole::status = Riscv::readConsoleStatus();
     plic_complete(CONSOLE_IRQ);
-
     if(SysConsole::status & CONSOLE_RX_STATUS_BIT){
         if(Scheduler::hasWaitingHArdware()){
             SysConsole::arr[0] = Riscv::readConsole();
+//            plic_complete(CONSOLE_IRQ);
             if(Scheduler::isWaiting()){ //in both cases, thread that was waiting for keyboard press gets control
                 Scheduler::endWait(Riscv::USER_MODE);
                 PCB::running = Scheduler::removeOneHardwareWait();
+                PCB::running->timeLeft = DEFAULT_TIME_SLICE;
+                SysConsole::vrednost = 3;
                 PCB::longJmp(PCB::running);
             }else{
                 ThreadState* oldTs = PCB::running;
                 PCB::running = Scheduler::removeOneHardwareWait();
+                PCB::running->timeLeft = DEFAULT_TIME_SLICE;
+                SysConsole::vrednost = 4;
                 PCB::yield(oldTs, PCB::running);
             }
         }else {
             //unexpected keyboard press, reading just to clean the buffer, for expected key-press
             SysConsole::arr[1] = Riscv::readConsole();
+            SysConsole::vrednost = 5;
             //Riscv::hardwareNum++; //optional counter of unexpected keyboard presses
         }
     }
+
     Riscv::writeA0(a0);
     return;
 }
 
 //system calls handlers
 void timerHandler(){
+    size_t a0 = Riscv::readA0();
     Riscv::timerNum++;
-
+//    printType("t");
     Scheduler::decrementSleeping();
-
     if(Scheduler::wokedUp){
         Scheduler::wokedUp = false;
         Scheduler::endWait(Riscv::USER_MODE);
         PCB::running = Scheduler::get();
         //I can just longjmp here because I'm 'beggining' waiting tread every time I wait
+//        printType("h");
         PCB::longJmp(PCB::running);
     }
 
     if(!Scheduler::hasActiveThreads()){ //case when just waiting for Scheduler to wake up
+//        printType("h");
+        Riscv::writeA0(a0);
         return;
     }
-
+//    printType("x");
     //async dispatch
     PCB::running->timeLeft--;
     if(PCB::running->timeLeft == 0){
         ThreadState* oldT = PCB::running;
         PCB::running = Scheduler::get();
+        if(PCB::running == nullptr){
+            Exception("PCB::dispatch_sync() - Scheduler::get() gave nullptr");
+        }
+
+        if(oldT == nullptr){
+            Exception("PCB::dispatch_sync() - PCB::running was nullptr");
+        }
+
         PCB::running->timeLeft = DEFAULT_TIME_SLICE;
-        if(oldT == PCB::running) return;
+        if(oldT == PCB::running) {
+//            printType("1");
+            Riscv::writeA0(a0);
+            return;
+        }
+//        printType("2");
         PCB::yield(oldT, PCB::running);
     }
+    Riscv::writeA0(a0);
 }
 
 void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
@@ -173,6 +195,7 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
                 Riscv::writeA0((uint64)1);
             }
             break;
+
         case 0x41: //getc
             if(Scheduler::hasJustOneActive()){
                 if(Scheduler::hasSleepingThreads()){
@@ -192,7 +215,7 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             break;
 
         case 0x50: //exception handler
-            printf("Exception => %s\n\n", (const char*)(a1));
+            printf("\n\nException => %s\n\n", (const char*)(a1));
             Riscv::stopEmulator();
             break;
         default: //some random code, that should be handler as error

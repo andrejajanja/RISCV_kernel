@@ -67,6 +67,9 @@ SysListElement<T>* SysList<T>::constructElement(){
         size = size/MEM_BLOCK_SIZE+1;
     }
     auto temp = (SysListElement<T>*)MemoryAllocator::mem_allocate(size);
+    if(temp == nullptr){
+        sysCallExcepiton("Failed to allocate memory for sys list element");
+    }
     return temp;
 }
 
@@ -79,6 +82,9 @@ SysListElement<T>* SysList<T>::constructElement(T data){
 
 template<typename T>
 void SysList<T>::destructElement(SysListElement<T>* ptr){
+    if(ptr == nullptr){
+        sysCallExcepiton("SysList::destructElement(void* ptr) - ptr is null, that can't be.");
+    }
     MemoryAllocator::mem_free(ptr);
 }
 
@@ -204,7 +210,11 @@ T SysList<T>::removeBack(){
 
 template<typename T>
 T SysList<T>::removeLast(){
+//    printType("r");
     if(count == 0) Exception("Empty SysList, can't remove last element");
+    if(lastElem == nullptr){
+        sysCallExcepiton("SysList<T>::removeLast() - lastElem is nullptr");
+    }
     T tempData = lastElem->data;
     if(count == 1){
         lastIndex = 0;
@@ -233,6 +243,7 @@ T SysList<T>::removeLast(){
     count--;
     (lastIndex == 0)? lastIndex=count - 1: lastIndex--;
     destructElement(temp);
+//    printType("l");
     return tempData;
 }
 
@@ -260,7 +271,7 @@ void SysList<T>::remove(T data) {
         temp = temp->right;
     }
 
-    if(index == -1) Exception("SysListElement not in the list, can't remove");
+    if(index == -1) Exception("SysList::remove(T data) - Element not in the list, can't remove");
 
     if(index == 0){
         removeFront();

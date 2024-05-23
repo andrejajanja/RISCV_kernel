@@ -53,7 +53,7 @@ void Scheduler::printThreads(){
     if(sleeping->getCount() != 0){
         printf("- Sleeping -> %d ---\n", sleeping->getCount());
         for(auto iter = sleeping->getIterator(); iter.hasElements(); ++iter){
-            printf(" Addr: %u\n", (*iter)->registers[PC]);
+            printf(" Addr: %u , for %u*100ms\n", (*iter)->registers[PC], (*iter)->waitingFor);
         }
     }
 
@@ -72,6 +72,9 @@ bool Scheduler::hasAnyThreads(){
 }
 
 void Scheduler::put(ThreadState *ts) {
+    if(ts == nullptr){
+        sysCallExcepiton("Scheduler::put(ThreadState *ts) - ts is nullptr");
+    }
     pool->insertBeforeLast(ts);
 }
 

@@ -66,6 +66,9 @@ int thread_dispatch(){
 }
 
 int time_sleep(time_t duration){
+    if(duration == 0){ //za cije babe zdravlje je ovo izazivalo da nit ceka ~10^15 timera?
+        return 0;
+    }
     asm("mv a1, %0;"
         "li a0, 0x31;"
         "ecall;" : : "r"(duration));

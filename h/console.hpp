@@ -4,11 +4,13 @@
 
 #ifndef RISCV_KERNEL_CONSOLE_H
 #define RISCV_KERNEL_CONSOLE_H
+#include "../lib/hw.h"
 
 const int EOF = -1;
 
 class SysConsole {
 public:
+    static size_t vrednost;
     static char status;
     static char arr[];
 

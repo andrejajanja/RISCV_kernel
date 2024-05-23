@@ -48,6 +48,7 @@ int PCB::freeState(ThreadState* state){
 
 void PCB::dispatch_sync() {
     //waiting only for timer
+//    printType("d");
     if(Scheduler::hasOnlySleepingThreads()){
         Scheduler::prepairWait(Riscv::WAIT_SOFTWARE);
     }
@@ -57,7 +58,15 @@ void PCB::dispatch_sync() {
 
     ThreadState* oldT = PCB::running;
     PCB::running = Scheduler::get();
+    if(PCB::running == nullptr){
+        Exception("PCB::dispatch_sync() - Scheduler::get() gave nullptr");
+    }
+
+    if(oldT == nullptr){
+        Exception("PCB::dispatch_sync() - PCB::running was nullptr");
+    }
     PCB::running->timeLeft = DEFAULT_TIME_SLICE;
+//    printType("s");
     if(oldT == PCB::running) return;
     yield(oldT, PCB::running);
 }
@@ -82,8 +91,9 @@ void PCB::threadBegin(ThreadState *state) {
 
 void PCB::threadComplete() {
     Scheduler::removeRunning();
-    if(PCB::running->cppSem){
-        if(PCB::running->cppSem->state == -1){
+    if(PCB::running->cppSem != nullptr){
+        PCB::running->cppSem->state++; //Za cije babe zdravlje je ovo falilo
+        if(PCB::running->cppSem->beggining != nullptr){
             SEM::popBlocked(PCB::running->cppSem);
         }
     }else{

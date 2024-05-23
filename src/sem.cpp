@@ -9,7 +9,6 @@
 #include "../h/sys_structs.hpp"
 
 BlockedPCB* SEM::constructBlocked(ThreadState* ts) {
-
     auto blockedPtr = (BlockedPCB*)MemoryAllocator::mem_allocate(1);
     if(blockedPtr == nullptr){
         sysCallExcepiton("Failed to allocate space for blocked ThreadState.");
@@ -22,6 +21,9 @@ BlockedPCB* SEM::constructBlocked(ThreadState* ts) {
 }
 
 int SEM::destructBlocked(BlockedPCB* ptr) {
+    if(ptr == nullptr){
+        sysCallExcepiton("SEM::destructBlocked(BlockedPCB* ptr) - ptr is nullptr");
+    }
     return MemoryAllocator::mem_free(ptr);
 }
 
@@ -38,6 +40,9 @@ SemState* SEM::constructSem(int init) {
 }
 
 int SEM::destructSem(SemState* sem) {
+    if(sem == nullptr){
+        sysCallExcepiton("SEM::destructSem(SemState* sem) - sem is nullptr");
+    }
     int retVal = 0;
     if(sem->beggining != nullptr){
         retVal = -1;
@@ -50,11 +55,6 @@ int SEM::destructSem(SemState* sem) {
             Scheduler::put(tempPtr->pcbPtr);
             destructBlocked(tempPtr);
         }
-
-        //shorter implementation:
-//        while(sem->beggining != nullptr){
-//            popBlocked(sem);
-//        }
     }
 
     MemoryAllocator::mem_free(sem);
@@ -71,35 +71,50 @@ void SEM::popBlocked(SemState* handle) {
 }
 
 void SEM::semSignal(SemState* handle) {
+    if(handle == nullptr){
+        sysCallExcepiton("SEM::semSignal(SemState* handle) - handle is nullptr");
+    }
     handle->state++;
     if(handle->state > 0){
         return;
     }
 
+    if(handle->beggining == nullptr){
+        sysCallExcepiton("SEM::semSignal(SemState* handle) - handle.beggining is nullptr");
+    }
     popBlocked(handle);
 }
 
 void SEM::semWait(SemState* handle) {
+    if(handle == nullptr){
+        sysCallExcepiton("SEM::semWait(SemState* handle) - handle is nullptr");
+    }
     if(handle->state > 0){
         handle->state--;
         return;
     }
     handle->state--;
+    if(PCB::running == nullptr){
+        sysCallExcepiton("SEM::semWait(SemState* handle) - PCB::running is nullptr");
+    }
     PCB::running->semaphore = handle;
     //appending PCB::running to sem queue - FIFO algorithm
     BlockedPCB* tempPtr = constructBlocked(PCB::running);
     Scheduler::removeRunning();
     BlockedPCB* iter = handle->beggining;
 
-    if(iter == nullptr){
+    if(handle->beggining == nullptr){
+//        printType("i");
         handle->beggining = tempPtr;
+//        printType("f");
     }else{
+//        printType("El");
         while(iter->next != nullptr){
             iter = iter->next;
         }
         iter->next = tempPtr;
+//        printType("se");
     }
-
     PCB::dispatch_sync();
 }
 

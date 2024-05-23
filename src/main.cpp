@@ -7,7 +7,7 @@
 #include "../h/console.hpp"
 asm(".global endOfProgramLabel;");
 
-extern void producerConsumer_C_API();
+extern void userMain();
 
 //note: there is a bug when typing input before main starts
 int main(){
@@ -16,7 +16,7 @@ int main(){
     MemoryAllocator::initialize();
     Scheduler::initialize();
     // - create thread context for main function and start it
-    thread_create(&PCB::running, reinterpret_cast<void (*)(void *)>(&producerConsumer_C_API), nullptr);
+    thread_create(&PCB::running, reinterpret_cast<void (*)(void *)>(&userMain), nullptr);
     SysConsole::initialize();
     PCB::threadBegin(PCB::running);
     asm("endOfProgramLabel:");

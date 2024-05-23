@@ -1,4 +1,5 @@
 #include "buffer.hpp"
+#include "../h/exception.hpp"
 
 Buffer::Buffer(int _cap) : cap(_cap + 1), head(0), tail(0) {
     buffer = (int *)mem_alloc(sizeof(int) * cap);
@@ -27,28 +28,48 @@ Buffer::~Buffer() {
 }
 
 void Buffer::put(int val) {
-    sem_wait(spaceAvailable);
+    if(itemAvailable == nullptr){
+        new Exception("Buffer::put(int val) - itemAvailable is nullptr");
+    }
+    if(mutexTail == nullptr){
+        new Exception("Buffer::put(int val) - mutexTail is nullptr");
+    }
 
+    sem_wait(spaceAvailable);
     sem_wait(mutexTail);
     buffer[tail] = val;
     tail = (tail + 1) % cap;
+    if(itemAvailable == nullptr){
+        new Exception("Buffer::put(int val) - itemAvailable is nullptr");
+    }
+    if(mutexTail == nullptr){
+        new Exception("Buffer::put(int val) - mutexTail is nullptr");
+    }
     sem_signal(mutexTail);
 
     sem_signal(itemAvailable);
-
 }
 
 int Buffer::get() {
+    if(itemAvailable == nullptr){
+        new Exception("Buffer::get() - itemAvailable is nullptr");
+    }
+    if(spaceAvailable == nullptr){
+        new Exception("Buffer::get() - itemAvailable is nullptr");
+    }
+
     sem_wait(itemAvailable);
-
     sem_wait(mutexHead);
-
     int ret = buffer[head];
     head = (head + 1) % cap;
+    if(itemAvailable == nullptr){
+        new Exception("Buffer::get() - itemAvailable is nullptr");
+    }
+    if(spaceAvailable == nullptr){
+        new Exception("Buffer::get() - itemAvailable is nullptr");
+    }
     sem_signal(mutexHead);
-
     sem_signal(spaceAvailable);
-
     return ret;
 }
 
