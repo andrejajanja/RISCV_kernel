@@ -76,6 +76,13 @@ int time_sleep(time_t duration){
     return (int)value;
 }
 
+int getCurrentThreadId() {
+    asm("li a0, 0x32;"
+        "ecall");
+    int retValue = Riscv::readA0();
+    return retValue;
+}
+
 //semaphores
 int sem_open(sem_t* handle, unsigned init){
     if(handle == nullptr){

@@ -28,6 +28,7 @@ public:
     static void threadComplete();
 
     static ThreadState* running;
+    static int CurrentId;
 };
 
 #endif //RISCV_KERNEL_PCB_H

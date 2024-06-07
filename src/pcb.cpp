@@ -11,6 +11,7 @@
 #include "../h/sem.hpp"
 
 thread_t PCB::running = nullptr;
+int PCB::CurrentId = 10;
 
 ThreadState* PCB::createState(void* start_routine, void* arg, SemState* sem){
     //size = number of segments it takes to store ThreadState struct
@@ -35,6 +36,8 @@ ThreadState* PCB::createState(void* start_routine, void* arg, SemState* sem){
     ptr->semaphore = nullptr;
     ptr->cppSem = sem;
     ptr->isStarted = false;
+    ptr->isExpired = false;
+    ptr->ThreadID = PCB::CurrentId++;
     //this value not being explicitly set to 0 led to userMain thread
     //ending up in sleeping threads even tough it was never put to sleep lol
     ptr->waitingFor = 0;
@@ -47,14 +50,11 @@ int PCB::freeState(ThreadState* state){
 }
 
 void PCB::dispatch_sync() {
-    //waiting only for timer
-//    printType("d");
-    if(Scheduler::hasOnlySleepingThreads()){
-        Scheduler::prepairWait(Riscv::WAIT_SOFTWARE);
-    }
-    if(Scheduler::waitingHardwareAndWakeup()){ //za cije babe zdravlje ovo nije radilo za sem_timedwait
-        Scheduler::prepairWait(Riscv::USER_MODE);
-    }
+    if(Scheduler::waitingHardwareAndWakeup()) Scheduler::prepairWait(Riscv::USER_MODE);
+
+    if(Scheduler::hasOnlySleepingThreads()) Scheduler::prepairWait(Riscv::WAIT_SOFTWARE);
+
+    if(Scheduler::hasOnlyWaitingHArdware()) Scheduler::prepairWait(Riscv::WAIT_HARDWARE);
 
     ThreadState* oldT = PCB::running;
     PCB::running = Scheduler::get();
@@ -66,7 +66,6 @@ void PCB::dispatch_sync() {
         Exception("PCB::dispatch_sync() - PCB::running was nullptr");
     }
     PCB::running->timeLeft = DEFAULT_TIME_SLICE;
-//    printType("s");
     if(oldT == PCB::running) return;
     yield(oldT, PCB::running);
 }
@@ -106,16 +105,11 @@ void PCB::threadComplete() {
             "jalr x0, t0;");
     }
 
-    if(Scheduler::waitingHardwareAndWakeup()){
-        Scheduler::prepairWait(Riscv::USER_MODE);
-    }
-    if(Scheduler::hasOnlySleepingThreads()){
-        Scheduler::prepairWait(Riscv::WAIT_SOFTWARE);
-    }
+    if(Scheduler::waitingHardwareAndWakeup()) Scheduler::prepairWait(Riscv::USER_MODE);
 
-    if(Scheduler::hasOnlyWaitingHArdware()){
-        Scheduler::prepairWait(Riscv::WAIT_HARDWARE);
-    }
+    if(Scheduler::hasOnlySleepingThreads()) Scheduler::prepairWait(Riscv::WAIT_SOFTWARE);
+
+    if(Scheduler::hasOnlyWaitingHArdware()) Scheduler::prepairWait(Riscv::WAIT_HARDWARE);
 
     PCB::running = Scheduler::get();
     if(PCB::running->isStarted){

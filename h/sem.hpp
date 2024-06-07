@@ -24,7 +24,7 @@ public:
     static int destructSem(SemState*);
     static void semSignal(sem_t);
     static void semWait(sem_t);
-    static void semTimedWait(sem_t, time_t);
+    static int semTimedWait(sem_t, time_t);
 };
 
 

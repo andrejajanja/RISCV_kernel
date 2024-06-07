@@ -90,6 +90,10 @@ void Scheduler::removeRunning(){
     pool->removeLast();
 }
 
+void Scheduler::removeFromSleeping(ThreadState* ts) {
+    sleeping->remove(ts);
+}
+
 void Scheduler::putRunningToSleep(time_t howLong) {
     ThreadState* tsTemp = pool->removeLast();
     tsTemp->waitingFor = howLong;
@@ -113,7 +117,9 @@ void Scheduler::decrementSleeping() {
             //if temp was put to sleep with SEM::timedwait
 
             SemState* sem = temp->semaphore;
+            sem->state++;
             temp->semaphore = nullptr;
+            temp->isExpired = true;
 
             BlockedPCB* tempPCB = sem->beggining;
             if(temp == tempPCB->pcbPtr){

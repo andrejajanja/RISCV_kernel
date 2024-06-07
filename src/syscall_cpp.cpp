@@ -47,6 +47,10 @@ int Thread::sleep(time_t time) {
     return time_sleep(time);
 }
 
+int Thread::getCurrentThreadId() {
+    return ::getCurrentThreadId();
+}
+
 PeriodicThread::PeriodicThread(time_t period): Thread(&periodicRunWrapper, this), period(period), active(true){
     this->start();
 }

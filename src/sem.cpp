@@ -66,6 +66,10 @@ void SEM::popBlocked(SemState* handle) {
     handle->beggining = handle->beggining->next;
     tempPtr->pcbPtr->semaphore = nullptr;
     tempPtr->pcbPtr->timeLeft = DEFAULT_TIME_SLICE;
+    if(tempPtr->pcbPtr->waitingFor != 0){
+        Scheduler::removeFromSleeping(tempPtr->pcbPtr);
+        tempPtr->pcbPtr->waitingFor = 0;
+    }
     Scheduler::put(tempPtr->pcbPtr);
     destructBlocked(tempPtr);
 }
@@ -104,31 +108,26 @@ void SEM::semWait(SemState* handle) {
     BlockedPCB* iter = handle->beggining;
 
     if(handle->beggining == nullptr){
-//        printType("i");
         handle->beggining = tempPtr;
-//        printType("f");
     }else{
-//        printType("El");
         while(iter->next != nullptr){
             iter = iter->next;
         }
         iter->next = tempPtr;
-//        printType("se");
     }
     PCB::dispatch_sync();
 }
 
-void SEM::semTimedWait(sem_t handle, time_t timeout) {
+int SEM::semTimedWait(sem_t handle, time_t timeout) {
     if(handle->state > 0){
         handle->state--;
-        return;
+        return 0;
     }
     handle->state--;
     PCB::running->semaphore = handle;
 
     //appending PCB::running to sem queue - FIFO algorithm
     BlockedPCB* tempPtr = constructBlocked(PCB::running);
-    Scheduler::removeRunning();
     BlockedPCB* iter = handle->beggining;
 
     if(iter == nullptr){
@@ -142,4 +141,10 @@ void SEM::semTimedWait(sem_t handle, time_t timeout) {
 
     Scheduler::putRunningToSleep(timeout);
     PCB::dispatch_sync();
+    if(PCB::running->isExpired){
+        PCB::running->isExpired = false;
+        return -2;
+    }
+
+    return 0;
 }

@@ -16,6 +16,7 @@ typedef SemState* sem_t;
     int thread_exit();
     int thread_dispatch();
     int time_sleep(time_t duration);
+    int getCurrentThreadId();
 
 //semaphores
     int sem_open(sem_t* handle, unsigned init);

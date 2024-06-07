@@ -48,12 +48,13 @@ public:
 //private:
     static SysList<ThreadState*>* pool;
     static SysList<ThreadState*>* sleeping;
-//    static SysList<ThreadState*>* blocked;
     static SysList<ThreadState*>* waitingHardware;
 
 //    static uint32 numBlocked;
     static ThreadState* waiter;
     static bool waiting;
+
+    static void removeFromSleeping(ThreadState *pState);
 };
 
 

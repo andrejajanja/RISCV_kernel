@@ -42,7 +42,7 @@ void hadrwareHandler(){
     if(SysConsole::status & CONSOLE_RX_STATUS_BIT){
         if(Scheduler::hasWaitingHArdware()){
             SysConsole::arr[0] = Riscv::readConsole();
-//            plic_complete(CONSOLE_IRQ);
+
             if(Scheduler::isWaiting()){ //in both cases, thread that was waiting for keyboard press gets control
                 Scheduler::endWait(Riscv::USER_MODE);
                 PCB::running = Scheduler::removeOneHardwareWait();
@@ -71,24 +71,20 @@ void hadrwareHandler(){
 //system calls handlers
 void timerHandler(){
     size_t a0 = Riscv::readA0();
-    Riscv::timerNum++;
-//    printType("t");
     Scheduler::decrementSleeping();
     if(Scheduler::wokedUp){
         Scheduler::wokedUp = false;
         Scheduler::endWait(Riscv::USER_MODE);
         PCB::running = Scheduler::get();
         //I can just longjmp here because I'm 'beggining' waiting tread every time I wait
-//        printType("h");
         PCB::longJmp(PCB::running);
     }
 
     if(!Scheduler::hasActiveThreads()){ //case when just waiting for Scheduler to wake up
-//        printType("h");
         Riscv::writeA0(a0);
         return;
     }
-//    printType("x");
+
     //async dispatch
     PCB::running->timeLeft--;
     if(PCB::running->timeLeft == 0){
@@ -104,11 +100,10 @@ void timerHandler(){
 
         PCB::running->timeLeft = DEFAULT_TIME_SLICE;
         if(oldT == PCB::running) {
-//            printType("1");
             Riscv::writeA0(a0);
             return;
         }
-//        printType("2");
+
         PCB::yield(oldT, PCB::running);
     }
     Riscv::writeA0(a0);
@@ -146,6 +141,9 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             Scheduler::putRunningToSleep(arg1);
             PCB::dispatch_sync();
             Riscv::writeA0(0);
+            break;
+        case 0x32: //current thread id
+            Riscv::writeA0(PCB::running->ThreadID);
             break;
 
         //CPP-API additional calls for thead class
@@ -185,7 +183,8 @@ void systemCallHandler(uint64 opCode, uint64 a1, uint64 a2, uint64 a3){
             SEM::semSignal((SemState*)arg1);
             break;
         case 0x25: //sem_timedwait
-            SEM::semTimedWait((SemState*)arg1, (time_t)arg2);
+            retValue = (uint64)SEM::semTimedWait((SemState*)arg1, (time_t)arg2);
+            Riscv::writeA0(retValue);
             break;
         case 0x26: //sem_trywait
             semSt = (SemState*)arg1;

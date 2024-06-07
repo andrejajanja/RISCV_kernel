@@ -27,7 +27,9 @@ struct ThreadState{
     time_t waitingFor;
     SemState* semaphore;
     SemState* cppSem;
+    int ThreadID;
     bool isStarted;
+    bool isExpired;
 };
 
 typedef ThreadState* thread_t;
